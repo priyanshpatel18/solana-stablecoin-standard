@@ -1,12 +1,12 @@
 [package]
-name = "sss-transfer-hook"
+name = "sss-1"
 version = "0.1.0"
-description = "Solana Stablecoin Standard — transfer hook program"
+description = "Solana Stablecoin Standard - configurable on-chain program"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "sss_transfer_hook"
+name = "sss_1"
 
 [features]
 no-entrypoint = []
@@ -19,8 +19,4 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 [dependencies]
 anchor-lang = {version = "0.31.1", features = ["init-if-needed"]}
 anchor-spl = {version = "0.31.1", features = ["token", "associated_token", "metadata"]}
-spl-transfer-hook-interface = "0.10"
-spl-tlv-account-resolution = "0.10"
-spl-type-length-value = "0.8"
-spl-pod = "0.5"
-spl-discriminator = "0.4"
+spl-token-2022 = { version = "6.0.0", default-features = false, features = ["no-entrypoint"]}

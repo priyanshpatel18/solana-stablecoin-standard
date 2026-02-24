@@ -1,26 +1,38 @@
+/**
+ * SSS test helpers: PDA derivation, instruction builders, and token account creation.
+ * Account order in instruction builders must match the program struct account order.
+ */
 import {
   Connection,
   Keypair,
   PublicKey,
   sendAndConfirmTransaction,
-  SystemProgram,
-  SYSVAR_RENT_PUBKEY,
   Transaction,
   TransactionInstruction,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import * as crypto from "crypto";
 
+// ── Program IDs (must match declare_id! and Anchor.toml) ─────────────────────
+
+/** SSS token program (sss-1 / sss-2). */
 export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
-  "BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB"
+  process.env.SSS_TOKEN_PROGRAM_ID ?? "BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB"
 );
+
+/** Transfer hook program (extra-account-metas PDA owner). */
 export const SSS_HOOK_PROGRAM_ID = new PublicKey(
   "GtYvo8PY7hV3KWfGHs3fPDyFEHRV4t1PVw6BkYUBgctC"
 );
+
+/** Token-2022 program (mint, transfers, freeze). */
 export const TOKEN_2022_PROGRAM_ID = new PublicKey(
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 );
 
-// ── PDA Derivation ─────────────────────────────────────────────────
+// ── PDA derivation (seeds must match program constants) ──────────────────────
 
 export function findStablecoinPDA(mint: PublicKey): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
@@ -59,14 +71,25 @@ export function findBlacklistPDA(
   );
 }
 
-// ── Anchor Discriminator ───────────────────────────────────────────
+/** ExtraAccountMetaList PDA for transfer hook (seeds: ["extra-account-metas", mint], program: hookProgramId). */
+export function findExtraAccountMetasPDA(
+  mint: PublicKey,
+  hookProgramId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("extra-account-metas"), mint.toBuffer()],
+    hookProgramId
+  );
+}
+
+// ── Anchor instruction discriminator (first 8 bytes of sha256("global:<name>")) ─
 
 export function anchorDiscriminator(name: string): Buffer {
   const hash = crypto.createHash("sha256").update(`global:${name}`).digest();
   return hash.subarray(0, 8);
 }
 
-// ── Instruction Builders ───────────────────────────────────────────
+// ── Instruction builders (account order must match program structs) ───────────
 
 export interface InitializeParams {
   name: string;
@@ -82,27 +105,18 @@ export function serializeInitializeParams(params: InitializeParams): Buffer {
   const nameBytes = Buffer.from(params.name, "utf-8");
   const symbolBytes = Buffer.from(params.symbol, "utf-8");
   const uriBytes = Buffer.from(params.uri, "utf-8");
-
-  const buffers = [
-    // name: String (4-byte length prefix + data)
+  return Buffer.concat([
     Buffer.from(new Uint32Array([nameBytes.length]).buffer),
     nameBytes,
-    // symbol
     Buffer.from(new Uint32Array([symbolBytes.length]).buffer),
     symbolBytes,
-    // uri
     Buffer.from(new Uint32Array([uriBytes.length]).buffer),
     uriBytes,
-    // decimals: u8
     Buffer.from([params.decimals]),
-    // enable_permanent_delegate: bool
     Buffer.from([params.enablePermanentDelegate ? 1 : 0]),
-    // enable_transfer_hook: bool
     Buffer.from([params.enableTransferHook ? 1 : 0]),
-    // default_account_frozen: bool
     Buffer.from([params.defaultAccountFrozen ? 1 : 0]),
-  ];
-  return Buffer.concat(buffers);
+  ]);
 }
 
 export function buildInitializeIx(
@@ -114,10 +128,9 @@ export function buildInitializeIx(
   params: InitializeParams
 ): TransactionInstruction {
   const data = Buffer.concat([
-    anchorDiscriminator("initialize"),
+    anchorDiscriminator("initialize_stablecoin"),
     serializeInitializeParams(params),
   ]);
-
   return new TransactionInstruction({
     keys: [
       { pubkey: authority, isSigner: true, isWritable: true },
@@ -163,11 +176,10 @@ export function buildUpdateRolesIx(
     anchorDiscriminator("update_roles"),
     serializeRoleFlags(roles),
   ]);
-
   return new TransactionInstruction({
     keys: [
       { pubkey: authority, isSigner: true, isWritable: true },
-      { pubkey: stablecoin, isSigner: false, isWritable: false },
+      { pubkey: stablecoin, isSigner: false, isWritable: true },
       { pubkey: role, isSigner: false, isWritable: true },
       { pubkey: holder, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
@@ -186,16 +198,14 @@ export function buildUpdateMinterIx(
 ): TransactionInstruction {
   const quotaBuf = Buffer.alloc(8);
   quotaBuf.writeBigUInt64LE(quota);
-
   const data = Buffer.concat([
     anchorDiscriminator("update_minter"),
     quotaBuf,
   ]);
-
   return new TransactionInstruction({
     keys: [
       { pubkey: authority, isSigner: true, isWritable: true },
-      { pubkey: stablecoin, isSigner: false, isWritable: false },
+      { pubkey: stablecoin, isSigner: false, isWritable: true },
       { pubkey: minterInfo, isSigner: false, isWritable: true },
       { pubkey: minter, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
@@ -216,12 +226,10 @@ export function buildMintTokensIx(
 ): TransactionInstruction {
   const amountBuf = Buffer.alloc(8);
   amountBuf.writeBigUInt64LE(amount);
-
   const data = Buffer.concat([
     anchorDiscriminator("mint_tokens"),
     amountBuf,
   ]);
-
   return new TransactionInstruction({
     keys: [
       { pubkey: minter, isSigner: true, isWritable: false },
@@ -247,12 +255,10 @@ export function buildBurnTokensIx(
 ): TransactionInstruction {
   const amountBuf = Buffer.alloc(8);
   amountBuf.writeBigUInt64LE(amount);
-
   const data = Buffer.concat([
     anchorDiscriminator("burn_tokens"),
     amountBuf,
   ]);
-
   return new TransactionInstruction({
     keys: [
       { pubkey: burner, isSigner: true, isWritable: false },
@@ -357,6 +363,46 @@ export function buildTransferAuthorityIx(
   });
 }
 
+// ── Token-2022 ATA ─────────────────────────────────────────────────────────
+
+/** Derive Token-2022 ATA address for (mint, owner). Use when account already exists. */
+export function getTokenAccountAddress(mint: PublicKey, owner: PublicKey): PublicKey {
+  return getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    false,
+    TOKEN_2022_PROGRAM_ID
+  );
+}
+
+export async function createTokenAccount(
+  connection: Connection,
+  payer: Keypair,
+  mint: PublicKey,
+  owner: PublicKey
+): Promise<PublicKey> {
+  const {
+    createAssociatedTokenAccountInstruction,
+    getAssociatedTokenAddressSync,
+  } = await import("@solana/spl-token");
+  const ata = getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    false,
+    TOKEN_2022_PROGRAM_ID
+  );
+  const ix = createAssociatedTokenAccountInstruction(
+    payer.publicKey,
+    ata,
+    owner,
+    mint,
+    TOKEN_2022_PROGRAM_ID
+  );
+  await sendAndConfirmTransaction(connection, new Transaction().add(ix), [payer]);
+  return ata;
+}
+
+
 export function buildAddToBlacklistIx(
   blacklister: PublicKey,
   stablecoin: PublicKey,
@@ -386,13 +432,41 @@ export function buildAddToBlacklistIx(
   });
 }
 
+/** Build hook's initialize_extra_account_meta_list instruction (SSS-2 with transfer hook). */
+export function buildInitializeExtraAccountMetaListIx(
+  authority: PublicKey,
+  extraAccountMetaList: PublicKey,
+  mint: PublicKey,
+  sssTokenProgramId: PublicKey
+): TransactionInstruction {
+  const data = Buffer.concat([
+    anchorDiscriminator("initialize_extra_account_meta_list"),
+    sssTokenProgramId.toBuffer(),
+  ]);
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: authority, isSigner: true, isWritable: true },
+      { pubkey: extraAccountMetaList, isSigner: false, isWritable: true },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    programId: SSS_HOOK_PROGRAM_ID,
+    data,
+  });
+}
+
 export function buildSeizeIx(
   seizer: PublicKey,
   stablecoin: PublicKey,
   role: PublicKey,
   mint: PublicKey,
   sourceTokenAccount: PublicKey,
-  destinationTokenAccount: PublicKey
+  destinationTokenAccount: PublicKey,
+  transferHookProgram: PublicKey,
+  extraAccountMetas: PublicKey,
+  sssTokenProgram: PublicKey,
+  sourceBlacklist: PublicKey,
+  destBlacklist: PublicKey
 ): TransactionInstruction {
   return new TransactionInstruction({
     keys: [
@@ -402,39 +476,14 @@ export function buildSeizeIx(
       { pubkey: mint, isSigner: false, isWritable: false },
       { pubkey: sourceTokenAccount, isSigner: false, isWritable: true },
       { pubkey: destinationTokenAccount, isSigner: false, isWritable: true },
+      { pubkey: transferHookProgram, isSigner: false, isWritable: false },
+      { pubkey: extraAccountMetas, isSigner: false, isWritable: false },
+      { pubkey: sssTokenProgram, isSigner: false, isWritable: false },
+      { pubkey: sourceBlacklist, isSigner: false, isWritable: false },
+      { pubkey: destBlacklist, isSigner: false, isWritable: false },
       { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
     programId: SSS_TOKEN_PROGRAM_ID,
     data: anchorDiscriminator("seize"),
   });
-}
-
-// ── Token-2022 Helpers ─────────────────────────────────────────────
-
-export async function createTokenAccount(
-  connection: Connection,
-  payer: Keypair,
-  mint: PublicKey,
-  owner: PublicKey
-): Promise<PublicKey> {
-  const { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } =
-    await import("@solana/spl-token");
-  const ata = await getAssociatedTokenAddress(
-    mint,
-    owner,
-    false,
-    TOKEN_2022_PROGRAM_ID
-  );
-
-  const ix = createAssociatedTokenAccountInstruction(
-    payer.publicKey,
-    ata,
-    owner,
-    mint,
-    TOKEN_2022_PROGRAM_ID
-  );
-
-  const tx = new Transaction().add(ix);
-  await sendAndConfirmTransaction(connection, tx, [payer]);
-  return ata;
 }

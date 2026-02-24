@@ -1,5 +1,5 @@
 [workspace]
-members = ["programs/sss-token", "programs/sss-transfer-hook"]
+members = ["programs/sss-1", "programs/sss-2"]
 resolver = "2"
 
 [profile.release]

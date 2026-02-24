@@ -45,7 +45,7 @@ pub struct InitializeStablecoin<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + RoleAccount::INIT_SPACE,
+        space = RoleAccount::LEN,
         seeds = [ROLE_SEED, stablecoin.key().as_ref(), authority.key().as_ref()],
         bump,
     )]
