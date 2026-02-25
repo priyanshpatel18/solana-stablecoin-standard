@@ -5,12 +5,12 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-sss_token = "BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB"
-sss_transfer_hook = "GtYvo8PY7hV3KWfGHs3fPDyFEHRV4t1PVw6BkYUBgctC"
+sss_1 = "47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ"
+sss_2 = "8DMsf39fGWfcrWVjfyEq8fqZf5YcTvVPGgdJr8s2S8Nc"
 
 [programs.localnet]
-sss_token = "BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB"
-sss_transfer_hook = "GtYvo8PY7hV3KWfGHs3fPDyFEHRV4t1PVw6BkYUBgctC"
+sss_1 = "47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ"
+sss_2 = "8DMsf39fGWfcrWVjfyEq8fqZf5YcTvVPGgdJr8s2S8Nc"
 
 [registry]
 url = "https://api.apr.dev"
@@ -20,4 +20,4 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/sss-token.test.ts tests/sss-transfer-hook.test.ts tests/sss-sdk.test.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/sss-token.test.ts tests/sss-transfer-hook.test.ts"

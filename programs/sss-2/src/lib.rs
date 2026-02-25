@@ -12,7 +12,7 @@ use spl_discriminator::discriminator::SplDiscriminate;
 pub mod error;
 use error::HookError;
 
-declare_id!("GtYvo8PY7hV3KWfGHs3fPDyFEHRV4t1PVw6BkYUBgctC");
+declare_id!("8DMsf39fGWfcrWVjfyEq8fqZf5YcTvVPGgdJr8s2S8Nc");
 
 pub const EXTRA_ACCOUNT_METAS_SEED: &[u8] = b"extra-account-metas";
 

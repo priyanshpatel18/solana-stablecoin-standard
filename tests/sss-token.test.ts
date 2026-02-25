@@ -1,31 +1,29 @@
 import * as anchor from "@coral-xyz/anchor";
 import {
-  Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   sendAndConfirmTransaction,
   SystemProgram,
-  Transaction,
+  Transaction
 } from "@solana/web3.js";
 import { expect } from "chai";
 import {
-  SSS_TOKEN_PROGRAM_ID,
-  SSS_HOOK_PROGRAM_ID,
-  findStablecoinPDA,
-  findRolePDA,
-  findMinterPDA,
-  buildInitializeIx,
-  buildUpdateRolesIx,
-  buildUpdateMinterIx,
-  buildMintTokensIx,
   buildBurnTokensIx,
-  buildPauseIx,
-  buildUnpauseIx,
   buildFreezeAccountIx,
+  buildInitializeIx,
+  buildMintTokensIx,
+  buildPauseIx,
   buildThawAccountIx,
   buildTransferAuthorityIx,
+  buildUnpauseIx,
+  buildUpdateMinterIx,
+  buildUpdateRolesIx,
   createTokenAccount,
+  findMinterPDA,
+  findRolePDA,
+  findStablecoinPDA,
   getTokenAccountAddress,
+  SSS_HOOK_PROGRAM_ID,
+  SSS_TOKEN_PROGRAM_ID,
 } from "./helpers";
 
 describe("Simple Stablecoin Lifecycle", () => {
@@ -49,14 +47,15 @@ describe("Simple Stablecoin Lifecycle", () => {
     recipientKeypair = Keypair.generate();
     newAuthority = Keypair.generate();
 
-    // Fund keypairs via SOL transfer (more reliable than airdrop in CI)
+    // Fund keypairs via SOL transfer from provider (economic: 0.1 SOL each)
+    const LAMPORTS_PER_KEYPAIR = 100_000_000;
     const tx = new Transaction();
     for (const kp of [minterKeypair, burnerKeypair, recipientKeypair, newAuthority]) {
       tx.add(
         SystemProgram.transfer({
           fromPubkey: authority.publicKey,
           toPubkey: kp.publicKey,
-          lamports: 10 * LAMPORTS_PER_SOL,
+          lamports: LAMPORTS_PER_KEYPAIR,
         })
       );
     }

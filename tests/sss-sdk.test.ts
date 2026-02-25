@@ -5,7 +5,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import {
   Keypair,
-  LAMPORTS_PER_SOL,
   SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
@@ -43,12 +42,13 @@ describe("SDK integration (SSS-1 flow)", () => {
     minterKeypair = Keypair.generate();
     recipientKeypair = Keypair.generate();
     const tx = new Transaction();
+    const LAMPORTS_PER_KEYPAIR = 100_000_000;
     for (const kp of [minterKeypair, recipientKeypair]) {
       tx.add(
         SystemProgram.transfer({
           fromPubkey: authority.publicKey,
           toPubkey: kp.publicKey,
-          lamports: 10 * LAMPORTS_PER_SOL,
+          lamports: LAMPORTS_PER_KEYPAIR,
         })
       );
     }

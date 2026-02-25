@@ -1,5 +1,5 @@
 {
-  "address": "BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB",
+  "address": "47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ",
   "metadata": {
     "name": "solana_stablecoin_standard",
     "version": "0.1.0",
@@ -773,7 +773,7 @@
         },
         {
           "name": "sss_token_program",
-          "address": "BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB"
+          "address": "47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ"
         },
         {
           "name": "source_blacklist"

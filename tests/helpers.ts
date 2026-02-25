@@ -1,7 +1,3 @@
-/**
- * SSS test helpers: PDA derivation, instruction builders, and token account creation.
- * Account order in instruction builders must match the program struct account order.
- */
 import {
   Connection,
   Keypair,
@@ -14,17 +10,14 @@ import {
 } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import * as crypto from "crypto";
+import idlSssToken from "../sdk/core/src/idl/solana_stablecoin_standard.json";
+import idlSssHook from "../sdk/core/src/idl/sss_transfer_hook.json";
 
-// ── Program IDs (must match declare_id! and Anchor.toml) ─────────────────────
-
-/** SSS token program (sss-1 / sss-2). */
 export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
-  process.env.SSS_TOKEN_PROGRAM_ID ?? "BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB"
+  (idlSssToken as { address: string }).address
 );
-
-/** Transfer hook program (extra-account-metas PDA owner). */
 export const SSS_HOOK_PROGRAM_ID = new PublicKey(
-  "GtYvo8PY7hV3KWfGHs3fPDyFEHRV4t1PVw6BkYUBgctC"
+  (idlSssHook as { address: string }).address
 );
 
 /** Token-2022 program (mint, transfers, freeze). */

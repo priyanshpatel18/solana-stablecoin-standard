@@ -1,8 +1,9 @@
+import * as anchor from "@coral-xyz/anchor";
 import {
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   sendAndConfirmTransaction,
+  SystemProgram,
   Transaction,
 } from "@solana/web3.js";
 import { expect } from "chai";
@@ -27,7 +28,10 @@ import {
 } from "./helpers";
 
 describe("Stablecoin with Transfer Hook", () => {
-  const connection = new Connection("http://localhost:8899", "confirmed");
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
+  const connection = provider.connection;
+  const payer = provider.wallet.payer as Keypair;
 
   // Test state
   let authority: Keypair;
@@ -47,6 +51,8 @@ describe("Stablecoin with Transfer Hook", () => {
     userKeypair = Keypair.generate();
     badActorKeypair = Keypair.generate();
 
+    const LAMPORTS_PER_KEYPAIR = 100_000_000;
+    const tx = new Transaction();
     for (const kp of [
       authority,
       minterKeypair,
@@ -55,9 +61,15 @@ describe("Stablecoin with Transfer Hook", () => {
       userKeypair,
       badActorKeypair,
     ]) {
-      const sig = await connection.requestAirdrop(kp.publicKey, 10 * LAMPORTS_PER_SOL);
-      await connection.confirmTransaction(sig);
+      tx.add(
+        SystemProgram.transfer({
+          fromPubkey: payer.publicKey,
+          toPubkey: kp.publicKey,
+          lamports: LAMPORTS_PER_KEYPAIR,
+        })
+      );
     }
+    await provider.sendAndConfirm(tx);
 
     console.log("Setup:");
     console.log("  SSS Token Program:", SSS_TOKEN_PROGRAM_ID.toBase58());

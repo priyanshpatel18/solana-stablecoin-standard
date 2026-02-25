@@ -1,7 +1,10 @@
 {
   "license": "ISC",
   "type": "module",
-  "workspaces": ["sdk/core", "packages/cli"],
+  "workspaces": [
+    "sdk/core",
+    "packages/cli"
+  ],
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
@@ -11,9 +14,10 @@
     "cli": "node packages/cli/dist/index.js"
   },
   "dependencies": {
-    "@stbr/sss-token": "file:sdk/core",
     "@coral-xyz/anchor": "^0.31.1",
-    "@solana/spl-token": "^0.4.9"
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.98.4",
+    "@stbr/sss-token": "file:sdk/core"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

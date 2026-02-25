@@ -13,7 +13,7 @@ pub use events::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB");
+declare_id!("47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ");
 
 #[program]
 pub mod solana_stablecoin_standard {
