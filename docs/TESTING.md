@@ -4,7 +4,8 @@
 
 - **SDK unit tests** — `sdk/core`: PDA derivation, presets, config normalization, error parsing, compliance gating. No chain. Run: `npm run test:sdk` (from repo root) or `cd sdk/core && npm test`.
 - **Integration tests** — Repo root `tests/`: Full lifecycle with local validator. Run: `anchor test`. Includes `sss-token.test.ts`, `sss-transfer-hook.test.ts`, and `sss-sdk.test.ts` (SDK load/mint/supply).
-- **Fuzz (bonus)** — Trident or similar can be used to fuzz instruction data; document commands and invariants here when added.
+- **CLI smoke test** — Builds `packages/cli` and runs `--help` (and subcommand help). Run: `npm run test:cli` (from repo root). **Install dependencies first:** from repo root run `pnpm install` or `npm install` so workspace packages (including `sdk/core` and `packages/cli`) have their deps. With **pnpm**, a `pnpm-workspace.yaml` is included so workspaces are supported. You may see a one-time `bigint: Failed to load bindings, pure JS will be used` message from a dependency; it is harmless and the CLI runs correctly.
+- **Fuzz tests (Trident)** — Instruction sequences and invariants for the sss-1 program. See [Fuzz tests](#fuzz-tests) below.
 
 ## Running Tests
 
@@ -14,7 +15,71 @@ npm run test:sdk
 
 # Integration tests (starts validator, deploys programs, runs all test files)
 anchor test
+
+# CLI smoke test (build + --help; no RPC)
+npm run test:cli
 ```
+
+## Fuzz tests
+
+Trident is used to fuzz the SSS token program (sss-1) with random instruction data and sequences.
+
+### About Trident
+
+**Trident** is an open-source, Rust-based fuzzing framework for Solana programs written in Anchor. It was created by [Ackee Blockchain](https://ackee.xyz) and is supported by the Solana Foundation. Unlike black-box fuzzers that send random bytes, Trident uses **manually guided fuzzing (MGF)**:
+
+- **Instruction sequences** — You define flows (e.g. init → mint → burn) and Trident runs many variations, reordering and combining instructions to find sequence-dependent bugs.
+- **Instruction parameters** — The fuzzer varies instruction data (amounts, account indices, flags) within constraints you specify, improving coverage of edge cases.
+- **Account state** — Different account states (e.g. paused vs unpaused, blacklisted vs not) are explored so role checks, pause, and compliance logic get stressed.
+
+Trident parses your Anchor IDL to generate account and instruction types, so you spend less time on boilerplate and more on defining **invariants** (properties that must always hold) and **flows** (instruction sequences to fuzz). It runs at high throughput (thousands of transactions per second in its SVM environment) and supports regression testing and optional code coverage.
+
+For SSS, Trident helps catch overflow bugs, role/authorization mistakes, and invariant violations (e.g. supply ≠ minted − burned) before they reach production.
+
+**Docs:** [Trident documentation](https://ackee.xyz/trident/docs/latest/) · [Fuzz instructions](https://ackee.xyz/trident/docs/latest/start-fuzzing/writting-fuzz-test/) · [Invariants](https://ackee.xyz/trident/docs/latest/trident-advanced/invariants-assertions/)
+
+### Invariants to assert (implement in your flows)
+
+- **Supply:** Total supply = total minted − total burned (from stablecoin state).
+- **Pause:** When paused, `mint_tokens` and `burn_tokens` must fail.
+- **Blacklist (SSS-2):** Transfers involving a blacklisted address must be rejected by the transfer hook.
+- **Roles:** Only master can update roles; only minters can mint (within quota); only blacklister can add/remove blacklist; only seizer can seize.
+- **Overflow:** Mint/burn amounts must not overflow when scaled by decimals.
+
+### Install and run
+
+1. **Install Trident CLI** (and optionally Honggfuzz for older Trident versions):
+
+   ```bash
+   cargo install trident-cli
+   ```
+
+   See [Trident installation](https://ackee.xyz/trident/docs/latest/basics/installation/) for supported Anchor/Solana/Rust versions.
+
+2. **Initialize fuzz tests** (from repo root). This creates or updates the `trident-tests` directory:
+
+   ```bash
+   trident init
+   ```
+
+   If Trident creates a new directory, copy `trident-tests/Trident.toml` from this repo into it so the SSS program is used (address `47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ`, program `../target/deploy/sss_1.so`).
+
+3. **Build the program:**
+
+   ```bash
+   anchor build
+   ```
+
+4. **Run a fuzz target** (from `trident-tests`):
+
+   ```bash
+   cd trident-tests
+   trident fuzz run fuzz_0
+   ```
+
+   Optional: `trident fuzz run fuzz_0 12345` uses a fixed seed for reproducibility. Enable logging: `TRIDENT_LOG=1 trident fuzz run fuzz_0`.
+
+5. **Implement flows** in the generated `test_fuzz.rs`: build transactions for `initialize_stablecoin`, `mint_tokens`, `burn_tokens`, and add `check()` / invariant assertions for the invariants above. See [Trident docs](https://ackee.xyz/trident/docs/latest/start-fuzzing/writting-fuzz-test/) and `trident-tests/README.md`.
 
 ## Integration Test Files
 
@@ -28,6 +93,17 @@ Unit tests in `sdk/core/tests/stablecoin.test.ts` assert that:
 
 - `Presets.SSS_1` and `Presets.SSS_2` yield the correct three booleans.
 - `normalizeInitializeParams` with custom extensions or preset override produces the expected init params.
+
+## Unit tests for program instructions
+
+Rust unit tests in `programs/sss-1` (`cargo test -p sss-1`) cover:
+
+- **Constants** — PDA seeds and validation limits (name, symbol, URI, reason length).
+- **RoleFlags** — Serialization roundtrip and length.
+- **StablecoinState** — `is_sss2()` for SSS-1 vs SSS-2 config.
+- **StablecoinError** — All error variants exist and are usable.
+
+Full instruction execution (success and constraint-failure paths) is covered by the TypeScript integration tests in `tests/sss-token.test.ts` and `tests/sss-transfer-hook.test.ts`.
 
 ## CI
 

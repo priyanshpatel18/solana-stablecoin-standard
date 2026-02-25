@@ -480,3 +480,45 @@ export function buildSeizeIx(
     data: anchorDiscriminator("seize"),
   });
 }
+
+// ── Devnet / Explorer logging ──────────────────────────────────────────────
+
+export type ExplorerCluster = "devnet" | "mainnet-beta" | "localnet";
+
+/** Infer cluster from RPC endpoint for Explorer links. */
+export function clusterFromRpcEndpoint(rpcUrl: string): ExplorerCluster | null {
+  const u = rpcUrl.toLowerCase();
+  if (u.includes("devnet")) return "devnet";
+  if (u.includes("mainnet") && !u.includes("devnet")) return "mainnet-beta";
+  return null;
+}
+
+/** Explorer transaction URL (empty for localnet). */
+export function getExplorerTxUrl(signature: string, cluster: ExplorerCluster | null): string {
+  if (!cluster || cluster === "localnet") return "";
+  return `https://explorer.solana.com/tx/${signature}?cluster=${cluster}`;
+}
+
+/** Log transaction signature and Explorer link when cluster is devnet/mainnet. */
+export function logTx(
+  signature: string,
+  label: string,
+  rpcUrl?: string
+): void {
+  console.log(`  ${label}:`, signature);
+  const cluster = rpcUrl ? clusterFromRpcEndpoint(rpcUrl) : null;
+  const url = getExplorerTxUrl(signature, cluster);
+  if (url) console.log("  Explorer:", url);
+}
+
+/** Send transaction, confirm, and log signature + Explorer link (for devnet). */
+export async function sendAndConfirmAndLog(
+  connection: Connection,
+  tx: Transaction,
+  signers: Keypair[],
+  label: string
+): Promise<string> {
+  const sig = await sendAndConfirmTransaction(connection, tx, signers);
+  logTx(sig, label, connection.rpcEndpoint);
+  return sig;
+}

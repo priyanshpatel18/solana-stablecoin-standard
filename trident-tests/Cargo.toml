@@ -1,0 +1,18 @@
+[workspace]
+resolver = "1"
+
+[package]
+name = "fuzz_tests"
+version = "0.1.0"
+description = "Created with Trident"
+edition = "2021"
+
+[dependencies]
+borsh = "1.5.3"
+
+[dependencies.trident-fuzz]
+path = "trident-fuzz"
+
+[[bin]]
+name = "fuzz_0"
+path = "fuzz_0/test_fuzz.rs"

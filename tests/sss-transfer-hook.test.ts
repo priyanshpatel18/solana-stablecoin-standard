@@ -23,6 +23,7 @@ import {
   findRolePDA,
   findStablecoinPDA,
   getTokenAccountAddress,
+  sendAndConfirmAndLog,
   SSS_HOOK_PROGRAM_ID,
   SSS_TOKEN_PROGRAM_ID,
 } from "./helpers";
@@ -100,7 +101,7 @@ describe("Stablecoin with Transfer Hook", () => {
       );
 
       const tx = new Transaction().add(ix);
-      await sendAndConfirmTransaction(connection, tx, [authority, mintKeypair]);
+      await sendAndConfirmAndLog(connection, tx, [authority, mintKeypair], "Initialize SSS-2");
 
       const info = await connection.getAccountInfo(stablecoinPDA);
       expect(info).to.not.be.null;
@@ -113,7 +114,7 @@ describe("Stablecoin with Transfer Hook", () => {
       const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
 
       const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
-      await sendAndConfirmTransaction(
+      await sendAndConfirmAndLog(
         connection,
         new Transaction().add(
           buildUpdateRolesIx(
@@ -130,11 +131,12 @@ describe("Stablecoin with Transfer Hook", () => {
             }
           )
         ),
-        [authority]
+        [authority],
+        "Compliance roles (minter)"
       );
 
       const [blRole] = findRolePDA(stablecoinPDA, blacklisterKeypair.publicKey);
-      await sendAndConfirmTransaction(
+      await sendAndConfirmAndLog(
         connection,
         new Transaction().add(
           buildUpdateRolesIx(
@@ -151,11 +153,12 @@ describe("Stablecoin with Transfer Hook", () => {
             }
           )
         ),
-        [authority]
+        [authority],
+        "Compliance roles (blacklister)"
       );
 
       const [szRole] = findRolePDA(stablecoinPDA, seizerKeypair.publicKey);
-      await sendAndConfirmTransaction(
+      await sendAndConfirmAndLog(
         connection,
         new Transaction().add(
           buildUpdateRolesIx(
@@ -172,11 +175,12 @@ describe("Stablecoin with Transfer Hook", () => {
             }
           )
         ),
-        [authority]
+        [authority],
+        "Compliance roles (seizer)"
       );
 
       const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
-      await sendAndConfirmTransaction(
+      await sendAndConfirmAndLog(
         connection,
         new Transaction().add(
           buildUpdateMinterIx(
@@ -187,7 +191,8 @@ describe("Stablecoin with Transfer Hook", () => {
             BigInt(10_000_000)
           )
         ),
-        [authority]
+        [authority],
+        "Minter quota"
       );
 
       console.log("  Roles and minter quota set");
@@ -204,7 +209,7 @@ describe("Stablecoin with Transfer Hook", () => {
         mintKeypair.publicKey,
         SSS_TOKEN_PROGRAM_ID
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(initExtraIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(initExtraIx), [authority], "Extra-account-metas");
       console.log("  Extra-account-metas PDA:", extraAccountMetasPDA.toBase58());
     });
   });
@@ -229,7 +234,7 @@ describe("Stablecoin with Transfer Hook", () => {
         mintKeypair.publicKey,
         userATA
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(thawIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(thawIx), [authority], "Thaw user ATA");
 
       const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
       const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
@@ -244,7 +249,7 @@ describe("Stablecoin with Transfer Hook", () => {
         userATA,
         mintAmount
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(mintIx), [minterKeypair]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(mintIx), [minterKeypair], "Mint to user");
 
       const balance = await connection.getTokenAccountBalance(userATA);
       expect(balance.value.amount).to.equal("1000000");
@@ -267,7 +272,7 @@ describe("Stablecoin with Transfer Hook", () => {
         "Sanctions list match"
       );
 
-      await sendAndConfirmTransaction(connection, new Transaction().add(ix), [blacklisterKeypair]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(ix), [blacklisterKeypair], "Blacklist add");
 
       const info = await connection.getAccountInfo(blacklistEntry);
       expect(info).to.not.be.null;
@@ -297,7 +302,7 @@ describe("Stablecoin with Transfer Hook", () => {
         mintKeypair.publicKey,
         badActorATA
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(thawIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(thawIx), [authority], "Thaw user ATA");
 
       const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
       const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
@@ -311,7 +316,7 @@ describe("Stablecoin with Transfer Hook", () => {
         badActorATA,
         BigInt(500_000)
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(mintIx), [minterKeypair]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(mintIx), [minterKeypair], "Mint to user");
 
       const treasuryATA = await createTokenAccount(
         connection,
@@ -326,7 +331,7 @@ describe("Stablecoin with Transfer Hook", () => {
         mintKeypair.publicKey,
         treasuryATA
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(thawTreasuryIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(thawTreasuryIx), [authority], "Thaw treasury");
 
       // Hook Execute "authority" (index 3) = transfer signer = permanent delegate = stablecoin PDA.
       // So source_blacklist must be blacklist(stablecoin, stablecoin), not blacklist(stablecoin, bad_actor).
@@ -350,7 +355,7 @@ describe("Stablecoin with Transfer Hook", () => {
         sourceBlacklist,
         destBlacklist
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(seizeIx), [seizerKeypair]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(seizeIx), [seizerKeypair], "Seize");
 
       const badActorBalance = await connection.getTokenAccountBalance(badActorATA);
       expect(badActorBalance.value.amount).to.equal("0");

@@ -6,7 +6,8 @@
   "bin": { "sss-token": "dist/index.js" },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "node dist/index.js --help && node dist/index.js init --help && node dist/index.js status --help"
   },
   "dependencies": {
     "@stbr/sss-token": "file:../../sdk/core",

@@ -8,22 +8,22 @@
 
 ## Audit Trail Format
 
-Suggested fields for an export or API:
+The backend compliance module (see [API.md](API.md)) exposes `GET /compliance/audit-log` and stores events from the indexer webhook and from API calls (mint, burn, blacklist add/remove). Export format (JSON or CSV) includes:
 
-- **Event type:** e.g. `blacklist_add`, `blacklist_remove`, `seize`.
-- **Stablecoin (mint):** Public key.
-- **Actor:** Signer public key.
-- **Target address:** For blacklist: the listed/unlisted address; for seize: source and destination token accounts (and derived owner addresses).
-- **Reason:** For blacklist add, the on-chain reason string.
-- **Amount:** For seize, the amount moved.
-- **Transaction signature:** On-chain tx ID.
-- **Timestamp:** Block time or indexer timestamp.
+- **timestamp** — ISO 8601.
+- **type** — `program_logs`, `blacklist_add`, `blacklist_remove`, `seize`, `mint`, `burn`, `freeze`, `thaw`.
+- **signature** — On-chain transaction signature when applicable.
+- **mint** — Stablecoin mint public key.
+- **address** — Target address (e.g. blacklisted address, recipient, burner).
+- **reason** — For blacklist add, the on-chain reason string.
+- **actor** — Signer public key.
+- **amount** — For mint/burn/seize, the amount.
 
-Backend services (see API.md) can expose these as structured logs or an audit-log endpoint.
+Use query params `action`, `from`, `to`, `mint`, and `format=json|csv` to filter and export.
 
-## Sanctions Screening
+## Sanctions Screening Integration Point
 
-SSS-2 does not perform sanctions screening itself. Operators should:
+The backend provides **POST /compliance/screening** with body `{ address }`. This is the integration point for an external sanctions screening provider (e.g. Chainalysis, Elliptic, Scorechain). Set `COMPLIANCE_SCREENING_URL` to the provider’s endpoint; the backend forwards the request and returns the provider’s response. If unset, the endpoint returns a stub `{ screened: true, match: false }`. Operators should:
 
 - Integrate with a sanctions screening provider (e.g. Chainalysis, Elliptic, or a custom list).
 - Map screening results to blacklist add/remove via the CLI or SDK (or a compliance service that calls the program).

@@ -22,6 +22,7 @@ import {
   findRolePDA,
   findStablecoinPDA,
   getTokenAccountAddress,
+  sendAndConfirmAndLog,
   SSS_HOOK_PROGRAM_ID,
   SSS_TOKEN_PROGRAM_ID,
 } from "./helpers";
@@ -88,12 +89,12 @@ describe("Simple Stablecoin Lifecycle", () => {
         }
       );
 
-      const sig = await sendAndConfirmTransaction(
+      const sig = await sendAndConfirmAndLog(
         connection,
         new Transaction().add(ix),
-        [authority, mintKeypair]
+        [authority, mintKeypair],
+        "Initialize tx"
       );
-      console.log("  Initialize tx:", sig);
 
       const info = await connection.getAccountInfo(stablecoinPDA);
       expect(info).to.not.be.null;
@@ -121,7 +122,7 @@ describe("Simple Stablecoin Lifecycle", () => {
         }
       );
 
-      await sendAndConfirmTransaction(connection, new Transaction().add(ix), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(ix), [authority], "Minter role");
 
       const info = await connection.getAccountInfo(minterRole);
       expect(info).to.not.be.null;
@@ -140,7 +141,7 @@ describe("Simple Stablecoin Lifecycle", () => {
         BigInt(1_000_000)
       );
 
-      await sendAndConfirmTransaction(connection, new Transaction().add(ix), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(ix), [authority], "Minter quota");
 
       const info = await connection.getAccountInfo(minterInfo);
       expect(info).to.not.be.null;
@@ -174,7 +175,7 @@ describe("Simple Stablecoin Lifecycle", () => {
         recipientATA,
         amount
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(ix), [minterKeypair]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(ix), [minterKeypair], "Mint");
 
       const balanceAfter = await connection.getTokenAccountBalance(recipientATA);
       expect(balanceAfter.value.amount).to.equal(String(amount));
@@ -187,7 +188,7 @@ describe("Simple Stablecoin Lifecycle", () => {
       const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
 
       const [burnerRole] = findRolePDA(stablecoinPDA, burnerKeypair.publicKey);
-      await sendAndConfirmTransaction(
+      await sendAndConfirmAndLog(
         connection,
         new Transaction().add(
           buildUpdateRolesIx(
@@ -204,7 +205,8 @@ describe("Simple Stablecoin Lifecycle", () => {
             }
           )
         ),
-        [authority]
+        [authority],
+        "Burner role"
       );
 
       const burnerATA = await createTokenAccount(
@@ -218,7 +220,7 @@ describe("Simple Stablecoin Lifecycle", () => {
       const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
 
       const mintAmount = BigInt(100_000);
-      await sendAndConfirmTransaction(
+      await sendAndConfirmAndLog(
         connection,
         new Transaction().add(
           buildMintTokensIx(
@@ -231,14 +233,15 @@ describe("Simple Stablecoin Lifecycle", () => {
             mintAmount
           )
         ),
-        [minterKeypair]
+        [minterKeypair],
+        "Mint to burner"
       );
 
       const balanceBeforeBurn = await connection.getTokenAccountBalance(burnerATA);
       expect(balanceBeforeBurn.value.amount).to.equal(String(mintAmount));
 
       const burnAmount = BigInt(50_000);
-      await sendAndConfirmTransaction(
+      await sendAndConfirmAndLog(
         connection,
         new Transaction().add(
           buildBurnTokensIx(
@@ -250,7 +253,8 @@ describe("Simple Stablecoin Lifecycle", () => {
             burnAmount
           )
         ),
-        [burnerKeypair]
+        [burnerKeypair],
+        "Burn"
       );
 
       const balanceAfterBurn = await connection.getTokenAccountBalance(burnerATA);
@@ -266,11 +270,11 @@ describe("Simple Stablecoin Lifecycle", () => {
       const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
 
       const pauseIx = buildPauseIx(authority.publicKey, stablecoinPDA, authorityRole);
-      await sendAndConfirmTransaction(connection, new Transaction().add(pauseIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(pauseIx), [authority], "Pause");
       console.log("  Stablecoin paused");
 
       const unpauseIx = buildUnpauseIx(authority.publicKey, stablecoinPDA, authorityRole);
-      await sendAndConfirmTransaction(connection, new Transaction().add(unpauseIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(unpauseIx), [authority], "Unpause");
       console.log("  Stablecoin unpaused");
     });
   });
@@ -294,7 +298,7 @@ describe("Simple Stablecoin Lifecycle", () => {
         mintKeypair.publicKey,
         recipientATA
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(freezeIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(freezeIx), [authority], "Freeze");
       console.log("  Account frozen");
 
       const thawIx = buildThawAccountIx(
@@ -304,7 +308,7 @@ describe("Simple Stablecoin Lifecycle", () => {
         mintKeypair.publicKey,
         recipientATA
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(thawIx), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(thawIx), [authority], "Thaw");
       console.log("  Account thawed");
     });
   });
@@ -318,7 +322,7 @@ describe("Simple Stablecoin Lifecycle", () => {
         stablecoinPDA,
         newAuthority.publicKey
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(ix), [authority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(ix), [authority], "Transfer authority");
       console.log("  Authority transferred to new key");
 
       const ix2 = buildTransferAuthorityIx(
@@ -326,7 +330,7 @@ describe("Simple Stablecoin Lifecycle", () => {
         stablecoinPDA,
         authority.publicKey
       );
-      await sendAndConfirmTransaction(connection, new Transaction().add(ix2), [newAuthority]);
+      await sendAndConfirmAndLog(connection, new Transaction().add(ix2), [newAuthority], "Transfer authority back");
       console.log("  Authority transferred back");
     });
   });

@@ -1,0 +1,52 @@
+{
+  "custom_metrics": {},
+  "master_seed": "0f438b536ba9a50fc09c7f977e12a8076cbf0cdc191fc4f96df101215a2887fe",
+  "state_snapshots_hash": "",
+  "transactions": {
+    "InitializeStablecoin": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 100000,
+      "transaction_panicked": 0,
+      "transaction_successful": 100000,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Pause": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 100000,
+      "transaction_panicked": 0,
+      "transaction_successful": 100000,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Unpause": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 49944,
+      "transaction_panicked": 0,
+      "transaction_successful": 49944,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    }
+  }
+}

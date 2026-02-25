@@ -1,0 +1,91 @@
+{
+  "custom_metrics": {},
+  "master_seed": "cea9b669379160dfa6e299a7eea1d7b30d9d77be0a44cf59c83a5add449c3858",
+  "state_snapshots_hash": "",
+  "transactions": {
+    "InitializeStablecoin": {
+      "custom_instruction_errors": {
+        "errors": {
+          "0": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: InitializeStablecoin",
+              "Program 11111111111111111111111111111111 invoke [2]",
+              "Program 11111111111111111111111111111111 success",
+              "Program 11111111111111111111111111111111 invoke [2]",
+              "Program 11111111111111111111111111111111 success",
+              "Program 11111111111111111111111111111111 invoke [2]",
+              "Create Account: account Address { address: YdfurroJGPjYqJ7c8s1haXfrm5FrVwNcPcmgMwU4PLa, base: None } already in use",
+              "Program 11111111111111111111111111111111 failed: custom program error: 0x0",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 18805 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x0"
+            ],
+            "occurrences": 50074
+          }
+        }
+      },
+      "transaction_failed": 50074,
+      "transaction_invoked": 50074,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Pause": {
+      "custom_instruction_errors": {
+        "errors": {
+          "3012": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: Pause",
+              "Program log: AnchorError caused by account: stablecoin. Error Code: AccountNotInitialized. Error Number: 3012. Error Message: The program expected this account to be already initialized.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 2879 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0xbc4"
+            ],
+            "occurrences": 50074
+          }
+        }
+      },
+      "transaction_failed": 50074,
+      "transaction_invoked": 50074,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Unpause": {
+      "custom_instruction_errors": {
+        "errors": {
+          "3012": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: Unpause",
+              "Program log: AnchorError caused by account: stablecoin. Error Code: AccountNotInitialized. Error Number: 3012. Error Message: The program expected this account to be already initialized.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 2882 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0xbc4"
+            ],
+            "occurrences": 49926
+          }
+        }
+      },
+      "transaction_failed": 49926,
+      "transaction_invoked": 49926,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import express from "express";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import * as fs from "fs";
 import * as path from "path";
+import { registerComplianceRoutes, addAuditEntry } from "./compliance";
 
 const app = express();
 app.use(express.json());
@@ -20,7 +21,7 @@ function getKeypair(): Keypair {
 }
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok", rpc: RPC_URL, mint: MINT_ADDRESS || null });
+  res.json({ status: "ok", rpc: RPC_URL, mint: MINT_ADDRESS || null, compliance: true });
 });
 
 app.post("/mint-request", async (req, res) => {
@@ -45,6 +46,14 @@ app.post("/mint-request", async (req, res) => {
       recipient: new PublicKey(recipient),
       amount: BigInt(amount),
       minter: minter ? new PublicKey(minter) : kp.publicKey,
+    });
+    addAuditEntry({
+      type: "mint",
+      signature: sig,
+      mint: MINT_ADDRESS,
+      address: recipient,
+      amount: String(amount),
+      actor: (minter ? new PublicKey(minter) : kp.publicKey).toBase58(),
     });
     res.json({ success: true, signature: sig });
   } catch (e) {
@@ -73,11 +82,25 @@ app.post("/burn-request", async (req, res) => {
     );
     const signer = burner ? new PublicKey(burner) : kp.publicKey;
     const sig = await stable.burn(signer, { amount: BigInt(amount) });
+    addAuditEntry({
+      type: "burn",
+      signature: sig,
+      mint: MINT_ADDRESS,
+      address: signer.toBase58(),
+      amount: String(amount),
+      actor: signer.toBase58(),
+    });
     res.json({ success: true, signature: sig });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     res.status(500).json({ error: msg });
   }
+});
+
+registerComplianceRoutes(app, {
+  getKeypair,
+  getConnection: () => connection,
+  getMintAddress: () => MINT_ADDRESS,
 });
 
 app.listen(PORT, () => {

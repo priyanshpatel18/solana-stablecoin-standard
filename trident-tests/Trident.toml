@@ -1,0 +1,16 @@
+# Trident fuzz configuration for Solana Stablecoin Standard (SSS).
+# Run from repo root: anchor build, then cd trident-tests && trident fuzz run fuzz_0
+# See docs/TESTING.md for full instructions.
+
+[fuzz.metrics]
+enabled = true
+dashboard = false
+json = true
+
+[fuzz.regression]
+enabled = true
+
+# SSS token program (sss-1). Build with: anchor build
+[[fuzz.programs]]
+address = "47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ"
+program = "../target/deploy/sss_1.so"

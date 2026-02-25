@@ -8,10 +8,11 @@
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
-    "build:sdk": "cd sdk/core && npm run build",
-    "test:sdk": "cd sdk/core && npm test",
+    "build:sdk": "pnpm -C sdk/core run build",
+    "test:sdk": "pnpm -C sdk/core run test",
     "test:integration": "anchor test",
-    "cli": "node packages/cli/dist/index.js"
+    "test:cli": "pnpm -C packages/cli run build && pnpm -C packages/cli run test",
+    "cli": "cd packages/cli && node dist/index.js"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

@@ -1,0 +1,63 @@
+{
+  "custom_metrics": {},
+  "master_seed": "e941683e486620fcad54475e32d37e8ffcbe38f78213bbabfd6acc05c0cde24d",
+  "state_snapshots_hash": "",
+  "transactions": {
+    "InitializeStablecoin": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 50147,
+      "transaction_panicked": 0,
+      "transaction_successful": 50147,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Pause": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 50147,
+      "transaction_panicked": 0,
+      "transaction_successful": 50147,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Unpause": {
+      "custom_instruction_errors": {
+        "errors": {
+          "3012": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: Unpause",
+              "Program log: AnchorError caused by account: stablecoin. Error Code: AccountNotInitialized. Error Number: 3012. Error Message: The program expected this account to be already initialized.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 2882 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0xbc4"
+            ],
+            "occurrences": 49853
+          }
+        }
+      },
+      "transaction_failed": 49853,
+      "transaction_invoked": 49853,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    }
+  }
+}

@@ -136,8 +136,32 @@ const supply = await stable.getTotalSupply();
 
 ## Role and Minter Management
 
-- **Update roles:** Use SDK `updateRoles(signer, { holder, roles })` (authority only).
-- **Update minter quota:** Use SDK `updateMinter(signer, { minter, quota })` (authority only).
+- **Update roles:** Use SDK `updateRoles(signer, { holder, roles })` (authority only). CLI: `minters add` / `minters remove` (see Management below).
+- **Update minter quota:** Use SDK `updateMinter(signer, { minter, quota })` (authority only). CLI: `minters add <ADDRESS> --quota <AMOUNT>`.
 - **Transfer authority:** Use SDK `transferAuthority(signer, newAuthority)` (authority only).
 
-CLI commands for `minters list/add/remove` and `holders` can be added on top of the SDK; they are not implemented in the minimal CLI.
+## Management (CLI)
+
+**Minters:**
+
+```bash
+sss-token -m <MINT> minters list
+sss-token -m <MINT> minters add <ADDRESS> --quota <AMOUNT>
+sss-token -m <MINT> minters remove <ADDRESS>
+```
+
+**Holders** (token accounts by mint, optional min balance):
+
+```bash
+sss-token -m <MINT> holders
+sss-token -m <MINT> holders --min-balance <AMOUNT>
+```
+
+**Audit log** (from backend; requires `BACKEND_URL`):
+
+```bash
+BACKEND_URL=http://localhost:3000 sss-token -m <MINT> audit-log
+BACKEND_URL=http://localhost:3000 sss-token -m <MINT> audit-log --action mint
+```
+
+---
