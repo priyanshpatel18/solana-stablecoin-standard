@@ -1,0 +1,20 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - KEYPAIR_PATH=/keys/id.json
+      - MINT_ADDRESS=${MINT_ADDRESS:-}
+      - PORT=3000
+    volumes:
+      - ./keys:/keys:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+

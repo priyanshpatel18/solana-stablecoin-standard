@@ -1,0 +1,84 @@
+{
+  "address": "GtYvo8PY7hV3KWfGHs3fPDyFEHRV4t1PVw6BkYUBgctC",
+  "metadata": {
+    "name": "sss_transfer_hook",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Solana Stablecoin Standard — transfer hook program"
+  },
+  "instructions": [
+    {
+      "name": "initialize_extra_account_meta_list",
+      "docs": [
+        "Initialize the ExtraAccountMetaList PDA.",
+        "Defines which extra accounts Token-2022 must include on every transfer CPI.",
+        "",
+        "Extra account layout (Execute instruction accounts):",
+        "[0] source token account",
+        "[1] mint",
+        "[2] destination token account",
+        "[3] authority (source wallet owner)",
+        "[4] ExtraAccountMetaList PDA",
+        "--- extra accounts ---",
+        "[5] sss-token program ID (for PDA derivation)",
+        "[6] stablecoin state PDA: seeds=[b\"stablecoin\", mint(1)] under program(5)",
+        "[7] source blacklist PDA: seeds=[b\"blacklist\", stablecoin(6), authority(3)] under program(5)",
+        "[8] dest blacklist PDA:   seeds=[b\"blacklist\", stablecoin(6), dest_owner_from_data(2,32,32)] under program(5)"
+      ],
+      "discriminator": [
+        92,
+        197,
+        174,
+        197,
+        41,
+        124,
+        19,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "extra_account_meta_list",
+          "docs": [
+            "Seeds: [\"extra-account-metas\", mint]"
+          ],
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "sss_token_program_id",
+          "type": "pubkey"
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Blacklisted",
+      "msg": "Transfer denied: address is blacklisted"
+    },
+    {
+      "code": 6001,
+      "name": "Paused",
+      "msg": "Transfer denied: stablecoin is paused"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidInstruction",
+      "msg": "Invalid instruction discriminator for transfer hook"
+    }
+  ]
+}
