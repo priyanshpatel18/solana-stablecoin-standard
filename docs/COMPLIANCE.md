@@ -32,4 +32,4 @@ The backend provides **POST /compliance/screening** with body `{ address }`. Thi
 ## Failure Modes
 
 - **Compliance not enabled:** If the stablecoin was created as SSS-1, calls to blacklist or seize will fail with `ComplianceNotEnabled` (program error 6002). The SDK throws `ComplianceNotEnabledError` in that case.
-- **Unauthorized:** Only the blacklister role can add/remove blacklist entries; only the seizer role can call seize. Other signers get `Unauthorized` (6000).
+- **Unauthorized:** Only the blacklister role can add/remove blacklist entries; only the seizer role can call seize. Other signers get `Unauthorized` (6000). The seize instruction validates that `transfer_hook_program` and `extra_account_metas` match the expected SSS-2 hook (Security Audit 3).

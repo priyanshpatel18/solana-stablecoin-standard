@@ -1,6 +1,6 @@
 {
   "name": "sss-backend",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mint/burn and indexer backend for Solana Stablecoin Standard",
   "main": "dist/index.js",
   "scripts": {

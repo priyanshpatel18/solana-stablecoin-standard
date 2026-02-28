@@ -159,6 +159,7 @@ The backend provides a mint/burn API, event indexer, and compliance module (audi
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — Layer model, data flows, security
+- [Security Audits](audits/) — SECURITY_AUDIT_1.md, SECURITY_AUDIT_2.md, SECURITY_AUDIT_3.md (all findings addressed)
 - [SDK](docs/SDK.md) — Presets, custom config, TypeScript API
 - [Operations](docs/OPERATIONS.md) — Operator runbook
 - [SSS-1](docs/SSS-1.md) — Minimal stablecoin spec

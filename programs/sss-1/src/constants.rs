@@ -11,12 +11,16 @@ pub const ROLE_SEED: &[u8] = b"role";
 pub const MINTER_SEED: &[u8] = b"minter";
 pub const BLACKLIST_SEED: &[u8] = b"blacklist";
 pub const SUPPLY_CAP_SEED: &[u8] = b"supply_cap";
+/// SSS-2 ExtraAccountMetaList PDA seed (matches sss_transfer_hook program)
+pub const EXTRA_ACCOUNT_METAS_SEED: &[u8] = b"extra-account-metas";
 
 /// SupplyCap account layout (manual deserialization in mint.rs)
 pub const SUPPLY_CAP_DISCRIMINATOR_SIZE: usize = 8;
 pub const SUPPLY_CAP_VALUE_OFFSET: usize = SUPPLY_CAP_DISCRIMINATOR_SIZE;
 pub const SUPPLY_CAP_VALUE_SIZE: usize = 8;
-pub const MIN_SUPPLY_CAP_DATA_LEN: usize = SUPPLY_CAP_VALUE_OFFSET + SUPPLY_CAP_VALUE_SIZE;
+pub const MIN_SUPPLY_CAP_DATA_LEN: usize = SUPPLY_CAP_VALUE_OFFSET
+    .checked_add(SUPPLY_CAP_VALUE_SIZE)
+    .unwrap();
 
 /// Validation limits
 pub const MAX_NAME_LEN: usize = 32;

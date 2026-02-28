@@ -34,6 +34,8 @@ pub struct UpdateMinter<'info> {
 
 impl<'info> UpdateMinter<'info> {
     pub fn update_minter(&mut self, quota: u64, bumps: &UpdateMinterBumps) -> Result<()> {
+        // Enforce quota >= already minted. Prevents inconsistent state; quotas can only increase
+        // or stay equal. To remove a minter entirely, use a different minter key.
         require!(
             quota >= self.minter_info.minted_amount,
             StablecoinError::QuotaExceeded

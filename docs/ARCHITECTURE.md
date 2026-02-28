@@ -37,6 +37,8 @@ Layer 1 — Base SDK:    Token creation, mint/freeze authority, metadata, role P
 ## Security
 
 - **Role-based access:** Master authority, minter (with per-minter quotas), burner, pauser, freezer, blacklister (SSS-2), seizer (SSS-2). No single key controls everything.
+- **Seize validation:** Seize instruction validates `transfer_hook_program` and `extra_account_metas` match the expected SSS-2 hook (Audit 3).
+- **Supply cap:** Mint validates supply cap before CPI (fail-fast); manual deserialization documented (Audit 3).
 - **Feature gating:** SSS-2 instructions (add_to_blacklist, remove_from_blacklist, seize) check `enable_permanent_delegate` and `enable_transfer_hook` and return a clear error if compliance was not enabled.
 - **Immutable flags:** `enable_permanent_delegate`, `enable_transfer_hook`, `default_account_frozen` are set once at init and cannot be changed.
 

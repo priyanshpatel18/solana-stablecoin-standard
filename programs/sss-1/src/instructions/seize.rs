@@ -73,6 +73,22 @@ impl<'info> Seize<'info> {
         );
         require!(self.role.roles.is_seizer, StablecoinError::Unauthorized);
 
+        // Validate transfer hook program and extra_account_metas match expected SSS-2 hook.
+        require_eq!(
+            self.transfer_hook_program.key(),
+            SSS_TRANSFER_HOOK_PROGRAM_ID,
+            StablecoinError::Unauthorized
+        );
+        let (expected_meta_pda, _) = Pubkey::find_program_address(
+            &[EXTRA_ACCOUNT_METAS_SEED, self.mint.key().as_ref()],
+            &SSS_TRANSFER_HOOK_PROGRAM_ID,
+        );
+        require_eq!(
+            self.extra_account_metas.key(),
+            expected_meta_pda,
+            StablecoinError::Unauthorized
+        );
+
         // Read full balance from source token account.
         // Must use StateWithExtensions (not Pack::unpack) because Token-2022 accounts
         // carry TLV extension data beyond the base 165-byte layout, and Pack::unpack
