@@ -3,7 +3,8 @@
   "type": "module",
   "workspaces": [
     "sdk/core",
-    "packages/cli"
+    "packages/cli",
+    "backend"
   ],
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
@@ -12,7 +13,9 @@
     "test:sdk": "pnpm -C sdk/core run test",
     "test:integration": "anchor test",
     "test:cli": "pnpm -C packages/cli run build && pnpm -C packages/cli run test",
-    "cli": "cd packages/cli && node dist/index.js"
+    "cli": "cd packages/cli && node dist/index.js",
+    "start:backend": "docker compose up",
+    "backend": "pnpm -C backend run start"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

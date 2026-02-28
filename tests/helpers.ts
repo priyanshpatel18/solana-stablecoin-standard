@@ -25,7 +25,7 @@ export const TOKEN_2022_PROGRAM_ID = new PublicKey(
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 );
 
-// ── PDA derivation (seeds must match program constants) ──────────────────────
+// PDA derivation (seeds match program).
 
 export function findStablecoinPDA(mint: PublicKey): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(

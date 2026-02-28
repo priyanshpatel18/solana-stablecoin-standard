@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Connection, PublicKey } from "@solana/web3.js";
+import { logger } from "./logger";
 
 const RPC_URL = process.env.RPC_URL || "https://api.devnet.solana.com";
 const PROGRAM_ID = new PublicKey(
@@ -39,7 +40,7 @@ async function postWebhookWithRetry(payload: object): Promise<void> {
       await sleep(backoffMs);
     }
   }
-  console.error("Webhook POST failed after", WEBHOOK_MAX_RETRIES, "attempts:", lastErr?.message ?? lastErr);
+  logger.error({ err: lastErr?.message ?? lastErr }, "Webhook POST failed after %s attempts", WEBHOOK_MAX_RETRIES);
 }
 
 connection.onLogs(
@@ -52,13 +53,13 @@ connection.onLogs(
       logs: logs.logs,
       err: logs.err,
     };
-    console.log(JSON.stringify(payload));
+    logger.info({ payload }, "program_logs");
     postWebhookWithRetry(payload).catch(() => {});
   },
   "confirmed"
 );
 
-console.log("Indexer subscribed to program", PROGRAM_ID.toBase58());
+logger.info({ programId: PROGRAM_ID.toBase58() }, "Indexer subscribed to program");
 if (WEBHOOK_URL) {
-  console.log("Webhook URL:", WEBHOOK_URL, "maxRetries:", WEBHOOK_MAX_RETRIES, "timeoutMs:", WEBHOOK_TIMEOUT_MS);
+  logger.info({ webhookUrl: WEBHOOK_URL, maxRetries: WEBHOOK_MAX_RETRIES, timeoutMs: WEBHOOK_TIMEOUT_MS }, "Webhook configured");
 }

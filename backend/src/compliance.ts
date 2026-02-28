@@ -1,9 +1,15 @@
-/**
- * Compliance module: audit store, webhook ingestion, blacklist management API, screening stub, audit export.
- */
+/** Compliance: audit store, webhook, blacklist API, screening, audit export. */
 
 import { Request, Response } from "express";
 import { PublicKey } from "@solana/web3.js";
+import {
+  webhookBodySchema,
+  blacklistGetQuerySchema,
+  blacklistPostBodySchema,
+  blacklistDeleteParamsSchema,
+  screeningBodySchema,
+  auditLogQuerySchema,
+} from "./schemas";
 
 export type AuditAction =
   | "program_logs"
@@ -13,7 +19,10 @@ export type AuditAction =
   | "mint"
   | "burn"
   | "freeze"
-  | "thaw";
+  | "thaw"
+  | "pause"
+  | "unpause"
+  | "blocked";
 
 export interface AuditEntry {
   timestamp: string;
@@ -77,8 +86,26 @@ export function removeFromBlacklistStore(mint: string, address: string): void {
   }
 }
 
+export async function isAddressBlocked(mint: string, address: string): Promise<boolean> {
+  const list = getBlacklist(mint);
+  if (list.some((e) => e.address === address)) return true;
+  const screeningUrl = process.env.COMPLIANCE_SCREENING_URL;
+  if (!screeningUrl) return false;
+  try {
+    const res = await fetch(screeningUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+    const data = res.ok ? await res.json() : { match: false };
+    return Boolean(data?.match);
+  } catch {
+    return false;
+  }
+}
+
 export function registerComplianceRoutes(
-  app: import("express").Express,
+  app: import("express").IRouter,
   deps: {
     getKeypair: () => { publicKey: PublicKey };
     getConnection: () => import("@solana/web3.js").Connection;
@@ -86,14 +113,12 @@ export function registerComplianceRoutes(
   }
 ): void {
   app.post("/compliance/webhook", (req: Request, res: Response) => {
-    const body = req.body as {
-      type?: string;
-      programId?: string;
-      signature?: string;
-      logs?: string[];
-      err?: unknown;
-    };
-    if (body?.type === "program_logs") {
+    const parsed = webhookBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
+    }
+    const body = parsed.data;
+    if (body.type === "program_logs") {
       addAuditEntry({
         type: "program_logs",
         programId: body.programId,
@@ -106,7 +131,11 @@ export function registerComplianceRoutes(
   });
 
   app.get("/compliance/blacklist", (req: Request, res: Response) => {
-    const mint = (req.query.mint as string) || deps.getMintAddress();
+    const parsed = blacklistGetQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
+    }
+    const mint = parsed.data.mint || deps.getMintAddress();
     if (!mint) {
       return res.status(400).json({ error: "mint required (query or MINT_ADDRESS)" });
     }
@@ -114,11 +143,15 @@ export function registerComplianceRoutes(
   });
 
   app.post("/compliance/blacklist", async (req: Request, res: Response) => {
-    const mintAddr = (req.body?.mint as string) || deps.getMintAddress();
-    const address = req.body?.address as string;
-    const reason = (req.body?.reason as string) || "";
-    if (!mintAddr || !address) {
-      return res.status(400).json({ error: "mint and address required" });
+    const parsed = blacklistPostBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
+    }
+    const mintAddr = parsed.data.mint || deps.getMintAddress();
+    const address = parsed.data.address;
+    const reason = parsed.data.reason ?? "";
+    if (!mintAddr) {
+      return res.status(400).json({ error: "mint required (body or MINT_ADDRESS)" });
     }
     try {
       const { getProgram } = await import("@stbr/sss-token");
@@ -152,10 +185,17 @@ export function registerComplianceRoutes(
   });
 
   app.delete("/compliance/blacklist/:address", async (req: Request, res: Response) => {
-    const address = req.params.address as string;
-    const mintAddr = (req.query.mint as string) || (req.body as { mint?: string })?.mint || deps.getMintAddress();
-    if (!mintAddr || !address) {
-      return res.status(400).json({ error: "mint and address required" });
+    const paramsParsed = blacklistDeleteParamsSchema.safeParse(req.params);
+    if (!paramsParsed.success) {
+      return res.status(400).json({ error: "Validation failed", details: paramsParsed.error.flatten() });
+    }
+    const address = paramsParsed.data.address;
+    const queryParsed = blacklistGetQuerySchema.safeParse(req.query);
+    const mintFromQuery = queryParsed.success ? queryParsed.data.mint : undefined;
+    const mintFromBody = (req.body as { mint?: string })?.mint;
+    const mintAddr = mintFromQuery || mintFromBody || deps.getMintAddress();
+    if (!mintAddr) {
+      return res.status(400).json({ error: "mint required (query, body, or MINT_ADDRESS)" });
     }
     try {
       const { getProgram } = await import("@stbr/sss-token");
@@ -184,10 +224,11 @@ export function registerComplianceRoutes(
   });
 
   app.post("/compliance/screening", (req: Request, res: Response) => {
-    const address = req.body?.address as string;
-    if (!address) {
-      return res.status(400).json({ error: "address required" });
+    const parsed = screeningBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
     }
+    const address = parsed.data.address;
     const screeningUrl = process.env.COMPLIANCE_SCREENING_URL;
     if (screeningUrl) {
       fetch(screeningUrl, {
@@ -204,13 +245,14 @@ export function registerComplianceRoutes(
   });
 
   app.get("/compliance/audit-log", (req: Request, res: Response) => {
-    const action = req.query.action as AuditAction | undefined;
-    const from = req.query.from as string | undefined;
-    const to = req.query.to as string | undefined;
-    const mint = req.query.mint as string | undefined;
-    const format = (req.query.format as string) || "json";
-    const entries = getAuditLog({ action: action || undefined, from, to, mint });
-    if (format === "csv") {
+    const parsed = auditLogQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
+    }
+    const { action, from, to, mint, format } = parsed.data;
+    const entries = getAuditLog({ action: (action as AuditAction) || undefined, from, to, mint });
+    const outFormat = format ?? "json";
+    if (outFormat === "csv") {
       const header = "timestamp,type,signature,mint,address,reason,actor,amount";
       const rows = entries.map(
         (e) =>

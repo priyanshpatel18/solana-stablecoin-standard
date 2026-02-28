@@ -451,7 +451,7 @@ mintersCmd
       ],
     });
     console.log("Minter (address)                    | Quota        | Minted");
-    console.log("------------------------------------|--------------|--------------");
+    console.log("-                                   |--------------|--------------");
     for (const { account } of accounts) {
       const data = account.data;
       const minterPubkey = new PublicKey(data.subarray(8 + 32, 8 + 32 + 32));
@@ -554,7 +554,7 @@ program
       return;
     }
     console.log("Owner (address)                     | Balance");
-    console.log("-------------------------------------|--------------");
+    console.log("-                                   |--------------");
     for (const { owner, amount } of entries) {
       console.log(`${owner} | ${amount}`);
     }

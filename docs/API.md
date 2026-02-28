@@ -1,25 +1,60 @@
 # Backend API Reference
 
-Backend services for the Solana Stablecoin Standard: mint/burn API and optional indexer/webhook.
+Backend services for the Solana Stablecoin Standard: mint/burn API, operations, compliance, and optional indexer/webhook.
 
 ## Mint/Burn Service
 
-HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_ADDRESS`, `PORT`.
+HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_ADDRESS`, `PORT`, `API_KEY` (optional).
+
+**Request ID:** Every response includes an `X-Request-Id` header (generated per request or from client `X-Request-Id`).
+
+**Auth:** If `API_KEY` is set, protected routes require the `X-API-Key` header to match. Missing or invalid key returns 401 `{ error: "Unauthorized" }`. Unprotected: `GET /health`, `GET /status/:mint`.
+
+**Rate limit:** Protected routes are limited to 30 requests per minute per client (by IP). Exceeded returns 429 `{ error: "Too many requests" }`.
+
+**Input validation:** All operation and compliance request bodies/query params are validated (Zod). Invalid input returns 400 `{ error: "Validation failed", details }`.
 
 ### Endpoints
 
 - **GET /health**  
   Returns `{ status: "ok", rpc, mint }`. No auth.
 
+- **GET /status/:mint**  
+  Returns stablecoin status for the given mint (path param). No auth.  
+  Response: `{ mint, authority, name, symbol, uri, decimals, paused, totalMinted, totalBurned, supply, preset ("SSS-1" | "SSS-2"), enablePermanentDelegate, enableTransferHook, defaultAccountFrozen }`.  
+  All numeric amounts are decimal strings. Returns 400 if mint is missing, 500 if the mint is not a valid SSS stablecoin.
+
 - **POST /mint-request**  
   Request mint. Body (JSON): `{ "recipient": "<pubkey>", "amount": "<number or string>", "minter": "<pubkey> (optional)" }`.  
   If `minter` is omitted, the keypair at `KEYPAIR_PATH` is used as minter.  
-  Returns `{ success: true, signature: "<tx sig>" }` or `{ error: "<message>" }` with status 400/500.
+  Recipient (and minter when provided) are screened against blacklist and optional `COMPLIANCE_SCREENING_URL`; if blocked, returns 403 `{ error: "Blocked" }` and no mint is performed.  
+  Returns `{ success: true, signature: "<tx sig>" }` or `{ error: "<message>" }` with status 400/403/500.
 
 - **POST /burn-request**  
   Request burn. Body (JSON): `{ "amount": "<number or string>", "burner": "<pubkey> (optional)" }`.  
   If `burner` is omitted, the keypair at `KEYPAIR_PATH` is used.  
-  Returns `{ success: true, signature: "<tx sig>" }` or `{ error: "<message>" }` with status 400/500.
+  Burner is screened; if blocked, returns 403 `{ error: "Blocked" }`.  
+  Returns `{ success: true, signature: "<tx sig>" }` or `{ error: "<message>" }` with status 400/403/500.
+
+### Operations (protected)
+
+- **POST /operations/freeze**  
+  Body: `{ "mint": "<pubkey>", "account": "<token account pubkey>" }`. Freezes the token account. Backend keypair must hold pauser/freeze role.
+
+- **POST /operations/thaw**  
+  Body: `{ "mint": "<pubkey>", "account": "<token account pubkey>" }`. Thaws the token account.
+
+- **POST /operations/pause**  
+  Body: `{ "mint": "<pubkey>" }`. Pauses the stablecoin mint.
+
+- **POST /operations/unpause**  
+  Body: `{ "mint": "<pubkey>" }`. Unpauses the stablecoin mint.
+
+- **POST /operations/seize**  
+  Body: `{ "mint": "<pubkey>", "from": "<owner pubkey>", "to": "<owner pubkey>", "amount": "<number or string>" }`.  
+  Derives source and destination token accounts from mint and owner pubkeys; seizes full source balance to destination. `amount` is recorded in the audit log. Backend keypair must hold seizer role (SSS-2).
+
+All operations return `{ success: true, signature: "<tx sig>" }` or `{ error: "<message>" }` with status 400/500.
 
 ### Fiat-to-stablecoin flow
 
@@ -78,11 +113,12 @@ The backend exposes a **compliance module** (blacklist management, sanctions scr
   Body: `{ address }`. Sanctions screening integration point. If `COMPLIANCE_SCREENING_URL` is set, forwards to that provider; otherwise returns stub `{ screened: true, match: false }`.
 
 - **GET /compliance/audit-log?action=&from=&to=&mint=&format=json|csv**  
-  Returns audit entries. `action`: one of `program_logs`, `blacklist_add`, `blacklist_remove`, `seize`, `mint`, `burn`, `freeze`, `thaw`. `format=csv` returns CSV with columns timestamp, type, signature, mint, address, reason, actor, amount.
+  Returns audit entries. `action`: one of `program_logs`, `blacklist_add`, `blacklist_remove`, `seize`, `mint`, `burn`, `freeze`, `thaw`, `pause`, `unpause`, `blocked`. `format=csv` returns CSV with columns timestamp, type, signature, mint, address, reason, actor, amount.
 
 ### Env
 
 - `MINT_ADDRESS` — default mint for blacklist/audit when not specified in request.
+- `API_KEY` — optional; when set, protected routes require `X-API-Key` header.
 - `COMPLIANCE_SCREENING_URL` — optional URL for sanctions screening provider (POST with `{ address }`).
 
 Audit trail format and regulatory notes: see [COMPLIANCE.md](COMPLIANCE.md).

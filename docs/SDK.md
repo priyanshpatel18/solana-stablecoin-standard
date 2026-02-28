@@ -31,8 +31,12 @@ const custom = await SolanaStablecoin.create(connection, {
   symbol: "CUSD",
   uri: "https://...",
   decimals: 6,
-  extensions: { permanentDelegate: true, transferHook: false },
+  extensions: { enablePermanentDelegate: true, enableTransferHook: false },
 }, authorityKeypair);
+
+await stable.compliance.blacklistAdd(blacklisterPubkey, addressPubkey, "Sanctions match");
+await stable.compliance.seize(seizerPubkey, sourceTokenAccount, destinationTokenAccount);
+const supply = await stable.getTotalSupply();
 ```
 
 ## Main Class: SolanaStablecoin
