@@ -148,4 +148,4 @@ pub fn update_minter(&mut self, quota: u64, bumps: &UpdateMinterBumps) -> Result
 
 ---
 
-*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz/*
+*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz/

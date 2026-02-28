@@ -17,12 +17,15 @@ pub struct TransferAuthority<'info> {
     )]
     pub stablecoin: Account<'info, StablecoinState>,
 
-    /// CHECK: The new authority
+    /// CHECK: The new authority. Does not require signer to allow programmatic/multisig
+    /// handoff and cold storage transfers. Caller must ensure address is correct.
     pub new_authority: AccountInfo<'info>,
 }
 
 impl<'info> TransferAuthority<'info> {
     pub fn transfer_authority(&mut self) -> Result<()> {
+        // NOTE: New authority does not auto-receive roles. Authority must call update_roles
+        // for the new authority before or after transfer; or use a two-tx flow.
         require!(
             self.new_authority.key() != Pubkey::default(),
             StablecoinError::Unauthorized

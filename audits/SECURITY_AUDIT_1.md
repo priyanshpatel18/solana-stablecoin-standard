@@ -267,4 +267,4 @@ pub fn add_to_blacklist(&mut self, reason: String, bumps: AddToBlacklistBumps) -
 
 ---
 
-*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz/*
+*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz

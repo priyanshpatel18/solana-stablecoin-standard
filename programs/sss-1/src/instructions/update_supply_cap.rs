@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::constants::*;
+use crate::events::SupplyCapUpdated;
 use crate::state::*;
 
 #[derive(Accounts)]
@@ -42,6 +43,13 @@ impl<'info> UpdateSupplyCap<'info> {
         self.supply_cap.set_inner(SupplyCap {
             cap: effective_cap,
             bump: self.supply_cap.bump,
+        });
+
+        emit!(SupplyCapUpdated {
+            stablecoin: self.stablecoin.key(),
+            new_cap: effective_cap,
+            updated_by: self.authority.key(),
+            timestamp: Clock::get()?.unix_timestamp,
         });
 
         Ok(())

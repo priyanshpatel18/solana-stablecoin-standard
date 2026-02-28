@@ -66,7 +66,8 @@ impl<'info> Seize<'info> {
         // to the treasury; ensure the transfer hook is configured to allow seizure flows, or that
         // source/dest are not blacklisted when invoking this instruction.
 
-        // Feature gate: only SSS-2 tokens support seizure (both permanent_delegate AND transfer_hook)
+        // Feature gate: only SSS-2 tokens support seizure (both permanent_delegate AND transfer_hook).
+        // NOTE: Seize is NOT gated by pause so emergency compliance actions can proceed.
         require!(
             self.stablecoin.is_sss2(),
             StablecoinError::ComplianceNotEnabled

@@ -192,6 +192,18 @@ function mapEventToAudit(
           actor: toBase58(data.updated_by as PublicKey),
         },
       };
+    case "SupplyCapUpdated":
+      return {
+        type: "supply_cap_update",
+        entry: {
+          ...base,
+          type: "supply_cap_update",
+          mint: toBase58(data.stablecoin as PublicKey),
+          address: undefined,
+          amount: String((data.new_cap as bigint) ?? (data.new_cap as number)),
+          actor: toBase58(data.updated_by as PublicKey),
+        },
+      };
     case "StablecoinInitialized":
       return {
         type: "init",

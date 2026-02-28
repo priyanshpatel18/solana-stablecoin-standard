@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::error::StablecoinError;
 use crate::events::RolesUpdated;
 use crate::state::*;
 use crate::{constants::*, RoleFlags};
@@ -33,6 +34,12 @@ pub struct UpdateRoles<'info> {
 
 impl<'info> UpdateRoles<'info> {
     pub fn update_roles(&mut self, roles: RoleFlags) -> Result<()> {
+        require!(
+            self.holder.key() != Pubkey::default(),
+            StablecoinError::InvalidRoleConfig
+        );
+        // NOTE: Role combination is unrestricted. Deployers should implement separation
+        // of duties at the organizational level (e.g. separate minter/burner, blacklister).
         self.role.set_inner(RoleAccount {
             stablecoin: self.stablecoin.key(),
             holder: self.holder.key(),

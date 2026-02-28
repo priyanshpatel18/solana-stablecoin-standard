@@ -6,6 +6,7 @@ use crate::constants::*;
 use crate::error::StablecoinError;
 use crate::events::TokensMinted;
 use crate::state::*;
+use anchor_lang::Discriminator;
 
 #[derive(Accounts)]
 pub struct MintTokens<'info> {
@@ -93,6 +94,11 @@ impl<'info> MintTokens<'info> {
             require!(
                 cap_data.len() >= MIN_SUPPLY_CAP_DATA_LEN,
                 StablecoinError::MathOverflow
+            );
+            // Verify Anchor discriminator (defense-in-depth; Audit 4)
+            require!(
+                cap_data.len() >= 8 && cap_data[0..8].eq(SupplyCap::DISCRIMINATOR),
+                StablecoinError::Unauthorized
             );
             let cap = u64::from_le_bytes(
                 cap_data[SUPPLY_CAP_VALUE_OFFSET..MIN_SUPPLY_CAP_DATA_LEN]

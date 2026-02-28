@@ -918,7 +918,10 @@
           }
         },
         {
-          "name": "new_authority"
+          "name": "new_authority",
+          "docs": [
+            "handoff and cold storage transfers. Caller must ensure address is correct."
+          ]
         }
       ],
       "args": []
@@ -1452,6 +1455,19 @@
         109,
         155,
         155
+      ]
+    },
+    {
+      "name": "SupplyCapUpdated",
+      "discriminator": [
+        162,
+        231,
+        73,
+        4,
+        93,
+        188,
+        91,
+        148
       ]
     },
     {
@@ -2125,6 +2141,30 @@
               "PDA bump"
             ],
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SupplyCapUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stablecoin",
+            "type": "pubkey"
+          },
+          {
+            "name": "new_cap",
+            "type": "u64"
+          },
+          {
+            "name": "updated_by",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }

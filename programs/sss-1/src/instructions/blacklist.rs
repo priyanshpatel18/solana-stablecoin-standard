@@ -67,7 +67,9 @@ pub struct RemoveFromBlacklist<'info> {
 
 impl<'info> AddToBlacklist<'info> {
     pub fn add_to_blacklist(&mut self, reason: String, bumps: AddToBlacklistBumps) -> Result<()> {
-        // Feature gate: only SSS-2 tokens support blacklisting
+        // Feature gate: only SSS-2 tokens support blacklisting.
+        // NOTE: Compliance ops (blacklist, seize) are NOT gated by pause so emergency
+        // compliance actions (e.g. blacklist OFAC match during operational pause) can proceed.
         require!(
             self.stablecoin.is_sss2(),
             StablecoinError::ComplianceNotEnabled
@@ -109,7 +111,8 @@ impl<'info> AddToBlacklist<'info> {
 
 impl<'info> RemoveFromBlacklist<'info> {
     pub fn remove_from_blacklist(&mut self) -> Result<()> {
-        // Feature gate: only SSS-2 tokens support blacklisting
+        // Feature gate: only SSS-2 tokens support blacklisting.
+        // NOTE: Not gated by pause (see add_to_blacklist).
         require!(
             self.stablecoin.is_sss2(),
             StablecoinError::ComplianceNotEnabled

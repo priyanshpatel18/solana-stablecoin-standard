@@ -133,4 +133,4 @@ const MIN_SUPPLY_CAP_DATA_LEN: usize = SUPPLY_CAP_VALUE_OFFSET + SUPPLY_CAP_VALU
 
 ---
 
-*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz/*
+*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz

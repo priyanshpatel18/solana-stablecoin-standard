@@ -84,6 +84,14 @@ pub struct MinterUpdated {
 }
 
 #[event]
+pub struct SupplyCapUpdated {
+    pub stablecoin: Pubkey,
+    pub new_cap: u64,
+    pub updated_by: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
 pub struct AuthorityTransferred {
     pub stablecoin: Pubkey,
     pub previous_authority: Pubkey,

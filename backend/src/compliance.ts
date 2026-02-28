@@ -26,6 +26,7 @@ export type AuditAction =
   | "blocked"
   | "authority_transfer"
   | "minter_update"
+  | "supply_cap_update"
   | "init";
 
 export interface AuditEntry {
