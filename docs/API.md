@@ -54,6 +54,10 @@ HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_A
   Body: `{ "mint": "<pubkey>", "from": "<owner pubkey>", "to": "<owner pubkey>", "amount": "<number or string>" }`.  
   Derives source and destination token accounts from mint and owner pubkeys; seizes full source balance to destination. `amount` is recorded in the audit log. Backend keypair must hold seizer role (SSS-2).
 
+- **POST /operations/roles**  
+  Body: `{ "mint": "<pubkey>", "holder": "<pubkey>", "roles": { "minter": boolean?, "burner": boolean?, "pauser": boolean?, "blacklister": boolean?, "seizer": boolean? } }`.  
+  Grants or updates roles for the holder. Backend keypair must be the stablecoin authority. Omitted role flags default to false. Used by the TUI Roles tab.
+
 All operations return `{ success: true, signature: "<tx sig>" }` or `{ error: "<message>" }` with status 400/500.
 
 ### Fiat-to-stablecoin flow
@@ -122,3 +126,11 @@ The backend exposes a **compliance module** (blacklist management, sanctions scr
 - `COMPLIANCE_SCREENING_URL` — optional URL for sanctions screening provider (POST with `{ address }`).
 
 Audit trail format and regulatory notes: see [COMPLIANCE.md](COMPLIANCE.md).
+
+## Admin TUI
+
+The repo includes an optional Admin TUI (`packages/tui`) that talks to this backend. It provides interactive screens for status, mint, burn, freeze/thaw, pause, blacklist, and seize.
+
+**Run:** From repo root, `pnpm run tui` (or `pnpm -C packages/tui run start` after `pnpm run build` in `packages/tui`). Set `BACKEND_URL` to the backend base URL (e.g. `http://localhost:3000`). If the backend has `API_KEY` set, set `API_KEY` in the TUI environment as well. Optionally set `MINT_ADDRESS` so the TUI uses that mint by default; otherwise the backend may return a default mint from `GET /health`, or you can enter the mint in the Status tab.
+
+**Usage:** Tab/arrow keys switch views; Enter submits forms. The TUI uses the same endpoints as this API reference.

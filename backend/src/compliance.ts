@@ -22,6 +22,7 @@ export type AuditAction =
   | "thaw"
   | "pause"
   | "unpause"
+  | "roles"
   | "blocked";
 
 export interface AuditEntry {

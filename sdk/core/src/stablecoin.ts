@@ -1,7 +1,11 @@
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import type { Idl } from "@coral-xyz/anchor";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
+import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+import {
+  getAssociatedTokenAddressSync,
+  getAccount,
+  createAssociatedTokenAccountInstruction,
+} from "@solana/spl-token";
 import idl from "./idl/solana_stablecoin_standard.json";
 import hookIdl from "./idl/sss_transfer_hook.json";
 import {
@@ -48,25 +52,28 @@ export interface StablecoinState {
 function toStablecoinState(raw: unknown): StablecoinState {
   const r = raw as Record<string, unknown>;
   const toBN = (v: unknown): BN => {
+    if (v == null) return new BN(0);
     if (BN.isBN(v)) return v as BN;
     if (typeof v === "bigint") return new BN(v.toString());
     if (typeof v === "number") return new BN(v);
-    return new BN((v as { toString: () => string }).toString());
+    return new BN(String(v));
   };
+  const totalMinted = r.total_minted ?? r.totalMinted;
+  const totalBurned = r.total_burned ?? r.totalBurned;
   return {
     authority: new PublicKey(r.authority as string),
     mint: new PublicKey(r.mint as string),
-    name: r.name as string,
-    symbol: r.symbol as string,
-    uri: r.uri as string,
-    decimals: r.decimals as number,
-    enable_permanent_delegate: r.enable_permanent_delegate as boolean,
-    enable_transfer_hook: r.enable_transfer_hook as boolean,
-    default_account_frozen: r.default_account_frozen as boolean,
-    paused: r.paused as boolean,
-    total_minted: toBN(r.total_minted),
-    total_burned: toBN(r.total_burned),
-    bump: r.bump as number,
+    name: (r.name as string) ?? "",
+    symbol: (r.symbol as string) ?? "",
+    uri: (r.uri as string) ?? "",
+    decimals: (r.decimals as number) ?? 0,
+    enable_permanent_delegate: (r.enable_permanent_delegate ?? r.enablePermanentDelegate) as boolean,
+    enable_transfer_hook: (r.enable_transfer_hook ?? r.enableTransferHook) as boolean,
+    default_account_frozen: (r.default_account_frozen ?? r.defaultAccountFrozen) as boolean,
+    paused: (r.paused as boolean) ?? false,
+    total_minted: toBN(totalMinted),
+    total_burned: toBN(totalBurned),
+    bump: (r.bump as number) ?? 0,
   };
 }
 
@@ -150,20 +157,41 @@ export class SolanaStablecoin {
       defaultAccountFrozen: initParams.default_account_frozen,
     };
 
-    await (program.methods as unknown as { initializeStablecoin: (p: typeof initArgs) => { accountsStrict: (a: object) => { signers: (s: Keypair[]) => { rpc: () => Promise<string> } } } })
-      .initializeStablecoin(initArgs)
-      .accountsStrict({
-        authority,
-        stablecoin: stablecoinPda,
-        mint: mintPk,
-        authorityRole: authorityRolePda,
-        transferHookProgram: SSS_HOOK_PROGRAM_ID,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-        systemProgram: SYSTEM_PROGRAM_ID,
-        rent: SYSVAR_RENT_ID,
-      })
-      .signers([mintKeypair])
-      .rpc();
+    const connection = provider.connection;
+    let initSig: string;
+    try {
+      initSig = await (program.methods as unknown as { initializeStablecoin: (p: typeof initArgs) => { accountsStrict: (a: object) => { signers: (s: Keypair[]) => { rpc: () => Promise<string> } } } })
+        .initializeStablecoin(initArgs)
+        .accountsStrict({
+          authority,
+          stablecoin: stablecoinPda,
+          mint: mintPk,
+          authorityRole: authorityRolePda,
+          transferHookProgram: SSS_HOOK_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SYSTEM_PROGRAM_ID,
+          rent: SYSVAR_RENT_ID,
+        })
+        .signers([mintKeypair])
+        .rpc();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Initialize stablecoin failed: ${msg}. Check RPC cluster (devnet/mainnet), program deployment, and signer balance.`
+      );
+    }
+
+    const commitment = "confirmed";
+    for (let i = 0; i < 25; i++) {
+      const info = await connection.getAccountInfo(stablecoinPda, { commitment });
+      if (info?.data) break;
+      if (i === 24) {
+        throw new Error(
+          `Stablecoin PDA not found after init (tx: ${initSig}). Init may have failed on-chain or RPC is lagging. Check explorer for tx.`
+        );
+      }
+      await new Promise((r) => setTimeout(r, 1200));
+    }
 
     const isSSS2 =
       initParams.enable_permanent_delegate && initParams.enable_transfer_hook;
@@ -193,12 +221,24 @@ export class SolanaStablecoin {
       string,
       { fetch: (p: PublicKey) => Promise<unknown> }
     >;
-    const raw =
-      await accountNs["stablecoinState"]?.fetch(this.stablecoin) ??
-      await accountNs["StablecoinState"]?.fetch(this.stablecoin);
+    const fetchAccount = () =>
+      accountNs["stablecoinState"]?.fetch(this.stablecoin) ??
+      accountNs["StablecoinState"]?.fetch(this.stablecoin);
+
+    let raw: unknown = null;
+    for (let i = 0; i < 15; i++) {
+      try {
+        raw = await fetchAccount();
+        if (raw) break;
+      } catch {
+        if (i === 14) throw new Error("Stablecoin state account not found");
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
     if (!raw) throw new Error("Stablecoin state account not found");
-    this._state = toStablecoinState(raw);
-    return this._state;
+    const state = toStablecoinState(raw);
+    this._state = state;
+    return state;
   }
 
   async getState(): Promise<StablecoinState> {
@@ -233,18 +273,48 @@ export class SolanaStablecoin {
     const [rolePda] = findRolePDA(this.stablecoin, params.minter, this.program.programId);
     const [minterInfoPda] = findMinterPDA(this.stablecoin, params.minter, this.program.programId);
     const recipientAta = this.getRecipientTokenAccount(params.recipient);
-    return (this.program.methods as unknown as { mintTokens: (amount: BN) => { accountsStrict: (a: object) => { rpc: () => Promise<string> } } })
+    const connection = this.provider.connection;
+    const needsAta = !(await connection.getAccountInfo(recipientAta));
+
+    const mintAccounts = {
+      minter: params.minter,
+      stablecoin: this.stablecoin,
+      role: rolePda,
+      minterInfo: minterInfoPda,
+      mint: this.mintAddress,
+      recipientTokenAccount: recipientAta,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+    };
+    const mintIxBuilder = (this.program.methods as unknown as {
+      mintTokens: (amount: BN) => {
+        accountsStrict: (a: object) => {
+          rpc: () => Promise<string>;
+          instruction: () => Promise<TransactionInstruction>;
+        };
+      };
+    })
       .mintTokens(new BN(params.amount.toString()))
-      .accountsStrict({
-        minter: params.minter,
-        stablecoin: this.stablecoin,
-        role: rolePda,
-        minterInfo: minterInfoPda,
-        mint: this.mintAddress,
-        recipientTokenAccount: recipientAta,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc();
+      .accountsStrict(mintAccounts);
+
+    if (needsAta) {
+      const createAtaIx = createAssociatedTokenAccountInstruction(
+        signer,
+        recipientAta,
+        params.recipient,
+        this.mintAddress,
+        TOKEN_2022_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      const mintIx = await mintIxBuilder.instruction();
+      const { blockhash } = await connection.getLatestBlockhash();
+      const tx = new Transaction().add(createAtaIx, mintIx);
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = signer;
+      const sig = await this.provider.sendAndConfirm(tx);
+      return sig;
+    }
+
+    return mintIxBuilder.rpc();
   }
 
   async burn(signer: PublicKey, params: BurnParams): Promise<string> {

@@ -150,6 +150,12 @@ sss-token -m <MINT> minters add <ADDRESS> --quota <AMOUNT>
 sss-token -m <MINT> minters remove <ADDRESS>
 ```
 
+`minters add` grants both minter and burner roles. To grant or update roles for an existing address (e.g. add burner to a key that only has minter):
+
+```bash
+sss-token -m <MINT> roles grant <ADDRESS> --minter --burner
+```
+
 **Holders** (token accounts by mint, optional min balance):
 
 ```bash
@@ -163,5 +169,28 @@ sss-token -m <MINT> holders --min-balance <AMOUNT>
 BACKEND_URL=http://localhost:3000 sss-token -m <MINT> audit-log
 BACKEND_URL=http://localhost:3000 sss-token -m <MINT> audit-log --action mint
 ```
+
+## Recovery: create a stablecoin you control
+
+If you only have one keypair (e.g. `~/.config/solana/id.json`) and the current mint was created by another keypair you don't have, you cannot pause/unpause that mint. Create a new stablecoin with your keypair as authority, then use it with the backend and TUI.
+
+1. **Create the stablecoin** (your keypair becomes authority and gets pauser; it still needs a minter quota to mint):
+
+   ```bash
+   pnpm cli init -p sss-1 -n "My USD" -s MUSD -k /Users/patel/.config/solana/id.json
+   ```
+
+   Copy the printed **Mint** address.
+
+2. **Add your keypair as minter with a quota** (authority can mint only after MinterInfo exists):
+
+   ```bash
+   # Replace NEW_MINT with the mint from step 1; get your pubkey: solana address -k /Users/patel/.config/solana/id.json
+   pnpm cli minters add $(solana address -k /Users/patel/.config/solana/id.json) -m NEW_MINT -q 1000000000 -k /Users/patel/.config/solana/id.json
+   ```
+
+3. **Point the backend at the new mint:** set `MINT_ADDRESS=NEW_MINT` and `KEYPAIR_PATH=/Users/patel/.config/solana/id.json` in `backend/.env`, then restart the backend.
+
+4. **Use the TUI:** run `pnpm tui`; it will use the backend's mint. You can unpause, mint, burn, freeze/thaw, and manage blacklist from the TUI because your keypair is both authority (pauser) and minter.
 
 ---

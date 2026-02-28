@@ -482,9 +482,9 @@ mintersCmd
     const quota = BigInt(cmdOpts.quota ?? "0");
     const sigRoles = await stable.updateRoles(keypair.publicKey, {
       holder: minterPubkey,
-      roles: { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false },
+      roles: { isMinter: true, isBurner: true, isPauser: true, isBlacklister: false, isSeizer: false },
     });
-    logTx(sigRoles, "Roles (minter) tx", globalOpts.rpcUrl);
+    logTx(sigRoles, "Roles (minter + burner) tx", globalOpts.rpcUrl);
     const sigQuota = await stable.updateMinter(keypair.publicKey, { minter: minterPubkey, quota });
     logTx(sigQuota, "Minter quota tx", globalOpts.rpcUrl);
   });
@@ -512,6 +512,42 @@ mintersCmd
     logTx(sig, "Minters remove tx", globalOpts.rpcUrl);
   });
 program.addCommand(mintersCmd);
+
+const rolesCmd = new Command("roles").description("Grant or update roles (authority only)");
+rolesCmd
+  .command("grant <address>")
+  .description("Grant roles to an address. Pass flags for each role to grant.")
+  .option("--minter", "Grant minter role")
+  .option("--burner", "Grant burner role")
+  .option("--pauser", "Grant pauser role")
+  .option("--blacklister", "Grant blacklister role (SSS-2)")
+  .option("--seizer", "Grant seizer role (SSS-2)")
+  .action(async function (this: Command, ...args: unknown[]) {
+    const [address] = args as [string];
+    const opts = this.opts() as { minter?: boolean; burner?: boolean; pauser?: boolean; blacklister?: boolean; seizer?: boolean };
+    const globalOpts = getGlobalOpts();
+    const connection = getConnection(globalOpts.rpcUrl);
+    const keypair = getKeypair(globalOpts.keypair);
+    const mintAddr = globalOpts.mint;
+    if (!mintAddr) {
+      console.error("--mint required");
+      process.exit(1);
+    }
+    const mint = new PublicKey(mintAddr);
+    const prog = loadProgram(connection, keypair);
+    const stable = await SolanaStablecoin.load(prog as never, mint);
+    const holder = new PublicKey(address);
+    const roles = {
+      isMinter: !!opts.minter,
+      isBurner: !!opts.burner,
+      isPauser: !!opts.pauser,
+      isBlacklister: !!opts.blacklister,
+      isSeizer: !!opts.seizer,
+    };
+    const sig = await stable.updateRoles(keypair.publicKey, { holder, roles });
+    logTx(sig, "Roles grant tx", globalOpts.rpcUrl);
+  });
+program.addCommand(rolesCmd);
 
 interface HoldersOpts {
   minBalance?: string;

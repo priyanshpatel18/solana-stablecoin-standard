@@ -19,6 +19,7 @@ import {
   freezeThawBodySchema,
   pauseUnpauseBodySchema,
   seizeBodySchema,
+  rolesBodySchema,
 } from "./schemas";
 import { TOKEN_2022_PROGRAM_ID } from "@stbr/sss-token";
 
@@ -61,21 +62,24 @@ app.get("/status/:mint", async (req, res) => {
     const stable = await loadStable(mintParam);
     const state = await stable.getState();
     const supply = await stable.getTotalSupply();
+    const totalMinted = state.total_minted?.toString?.() ?? String(state.total_minted ?? "0");
+    const totalBurned = state.total_burned?.toString?.() ?? String(state.total_burned ?? "0");
+    const supplyStr = supply?.toString?.() ?? String(supply ?? "0");
     res.json({
       mint: state.mint.toBase58(),
       authority: state.authority.toBase58(),
-      name: state.name,
-      symbol: state.symbol,
-      uri: state.uri,
-      decimals: state.decimals,
-      paused: state.paused,
-      totalMinted: state.total_minted.toString(),
-      totalBurned: state.total_burned.toString(),
-      supply: supply.toString(),
+      name: state.name ?? "",
+      symbol: state.symbol ?? "",
+      uri: state.uri ?? "",
+      decimals: state.decimals ?? 0,
+      paused: state.paused ?? false,
+      totalMinted,
+      totalBurned,
+      supply: supplyStr,
       preset: state.enable_permanent_delegate && state.enable_transfer_hook ? "SSS-2" : "SSS-1",
-      enablePermanentDelegate: state.enable_permanent_delegate,
-      enableTransferHook: state.enable_transfer_hook,
-      defaultAccountFrozen: state.default_account_frozen,
+      enablePermanentDelegate: state.enable_permanent_delegate ?? false,
+      enableTransferHook: state.enable_transfer_hook ?? false,
+      defaultAccountFrozen: state.default_account_frozen ?? false,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -172,21 +176,55 @@ protectedRouter.post("/burn-request", async (req, res) => {
   }
 });
 
+function normalizeFreezeThawError(e: unknown, action: "freeze" | "thaw"): { status: number; message: string } {
+  const msg = e instanceof Error ? e.message : String(e);
+  const lower = msg.toLowerCase();
+  const logs = e && typeof e === "object" && "logs" in e && Array.isArray((e as { logs?: string[] }).logs)
+    ? (e as { logs: string[] }).logs.join(" ")
+    : msg;
+  const logsLower = logs.toLowerCase();
+
+  if (logsLower.includes("invalid account state for operation") || logsLower.includes("custom program error: 0xd") || lower.includes("0xd")) {
+    return {
+      status: 400,
+      message: action === "thaw" ? "Account is not frozen." : "Account is already frozen.",
+    };
+  }
+  if (lower.includes("unauthorized") || logsLower.includes("unauthorized")) {
+    return { status: 403, message: "Caller lacks required role (pauser)." };
+  }
+  if (lower.includes("invalidaccountdata") || logsLower.includes("invalid account data")) {
+    return { status: 400, message: "Invalid token account (wrong mint or owner)." };
+  }
+  return { status: 500, message: msg };
+}
+
 protectedRouter.post("/operations/freeze", async (req, res) => {
   const parsed = freezeThawBodySchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
   }
-  const { mint, account } = parsed.data;
+  const { mint, account: accountParam, owner } = parsed.data;
+  if (!accountParam && !owner) {
+    return res.status(400).json({ error: "account or owner required" });
+  }
+  const tokenAccount = accountParam
+    ? new PublicKey(accountParam)
+    : getAssociatedTokenAddressSync(
+        new PublicKey(mint),
+        new PublicKey(owner!),
+        false,
+        TOKEN_2022_PROGRAM_ID
+      );
   try {
     const kp = getKeypair();
     const stable = await loadStable(mint);
-    const sig = await stable.freezeAccount(kp.publicKey, new PublicKey(account));
-    addAuditEntry({ type: "freeze", signature: sig, mint, address: account, actor: kp.publicKey.toBase58() });
+    const sig = await stable.freezeAccount(kp.publicKey, tokenAccount);
+    addAuditEntry({ type: "freeze", signature: sig, mint, address: tokenAccount.toBase58(), actor: kp.publicKey.toBase58() });
     res.json({ success: true, signature: sig });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    res.status(500).json({ error: msg });
+    const { status, message } = normalizeFreezeThawError(e, "freeze");
+    res.status(status).json({ error: message });
   }
 });
 
@@ -195,16 +233,27 @@ protectedRouter.post("/operations/thaw", async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
   }
-  const { mint, account } = parsed.data;
+  const { mint, account: accountParam, owner } = parsed.data;
+  if (!accountParam && !owner) {
+    return res.status(400).json({ error: "account or owner required" });
+  }
+  const tokenAccount = accountParam
+    ? new PublicKey(accountParam)
+    : getAssociatedTokenAddressSync(
+        new PublicKey(mint),
+        new PublicKey(owner!),
+        false,
+        TOKEN_2022_PROGRAM_ID
+      );
   try {
     const kp = getKeypair();
     const stable = await loadStable(mint);
-    const sig = await stable.thawAccount(kp.publicKey, new PublicKey(account));
-    addAuditEntry({ type: "thaw", signature: sig, mint, address: account, actor: kp.publicKey.toBase58() });
+    const sig = await stable.thawAccount(kp.publicKey, tokenAccount);
+    addAuditEntry({ type: "thaw", signature: sig, mint, address: tokenAccount.toBase58(), actor: kp.publicKey.toBase58() });
     res.json({ success: true, signature: sig });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    res.status(500).json({ error: msg });
+    const { status, message } = normalizeFreezeThawError(e, "thaw");
+    res.status(status).json({ error: message });
   }
 });
 
@@ -274,6 +323,40 @@ protectedRouter.post("/operations/seize", async (req, res) => {
       address: from,
       targetAddress: to,
       amount: String(amount),
+      actor: kp.publicKey.toBase58(),
+    });
+    res.json({ success: true, signature: sig });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    res.status(500).json({ error: msg });
+  }
+});
+
+protectedRouter.post("/operations/roles", async (req, res) => {
+  const parsed = rolesBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
+  }
+  const { mint, holder, roles: r } = parsed.data;
+  try {
+    const kp = getKeypair();
+    const stable = await loadStable(mint);
+    const roles = {
+      isMinter: r.minter ?? false,
+      isBurner: r.burner ?? false,
+      isPauser: r.pauser ?? false,
+      isBlacklister: r.blacklister ?? false,
+      isSeizer: r.seizer ?? false,
+    };
+    const sig = await stable.updateRoles(kp.publicKey, {
+      holder: new PublicKey(holder),
+      roles,
+    });
+    addAuditEntry({
+      type: "roles",
+      signature: sig,
+      mint,
+      address: holder,
       actor: kp.publicKey.toBase58(),
     });
     res.json({ success: true, signature: sig });

@@ -4,6 +4,7 @@
   "workspaces": [
     "sdk/core",
     "packages/cli",
+    "packages/tui",
     "backend"
   ],
   "scripts": {
@@ -15,7 +16,9 @@
     "test:cli": "pnpm -C packages/cli run build && pnpm -C packages/cli run test",
     "cli": "cd packages/cli && node dist/index.js",
     "start:backend": "docker compose up",
-    "backend": "pnpm -C backend run start"
+    "backend": "pnpm -C backend run start",
+    "tui": "pnpm -C packages/tui run build && pnpm -C packages/tui run start",
+    "tui:dev": "pnpm -C packages/tui run dev"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

@@ -131,13 +131,14 @@ Full operator runbook: [Operations](docs/OPERATIONS.md).
 - `programs/sss-2` — Transfer hook program (Token-2022)
 - `sdk/core` — TypeScript SDK (`@stbr/sss-token`)
 - `packages/cli` — Admin CLI (`sss-token`)
+- `packages/tui` — Admin TUI (Ink) for status, mint, burn, freeze/thaw, pause, blacklist, seize (backend client)
 - `backend/` — Mint/burn API, event indexer, compliance (audit, blacklist)
 - `tests/` — Integration tests
 - `docs/` — Architecture, SDK, operations, standards
 
 ## Backend
 
-The backend provides a mint/burn API, event indexer, and compliance module (audit trail, blacklist management). **Backend:** `docker compose up` or `pnpm run start:backend`; for local run without Docker use `pnpm run backend` (after `pnpm install` and building the SDK). See [API](docs/API.md) for endpoints.
+The backend provides a mint/burn API, event indexer, and compliance module (audit trail, blacklist management). **Backend:** `docker compose up` or `pnpm run start:backend`; for local run without Docker use `pnpm run backend` (after `pnpm install` and building the SDK). See [API](docs/API.md) for endpoints. **Admin TUI:** `BACKEND_URL=http://localhost:3000 pnpm run tui` (build `packages/tui` first); see [API](docs/API.md#admin-tui).
 
 **Devnet deployment proof:** Program IDs and example transactions are in [DEVNET](docs/DEVNET.md).
 

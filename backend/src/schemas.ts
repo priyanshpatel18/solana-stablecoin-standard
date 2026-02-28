@@ -14,8 +14,9 @@ export const burnBodySchema = z.object({
 });
 
 export const freezeThawBodySchema = z.object({
-  mint: z.string(),
-  account: z.string(),
+  mint: z.string().min(1, "mint required"),
+  account: z.string().optional(),
+  owner: z.string().optional(),
 });
 
 export const pauseUnpauseBodySchema = z.object({
@@ -27,6 +28,18 @@ export const seizeBodySchema = z.object({
   from: z.string(),
   to: z.string(),
   amount: amountSchema,
+});
+
+export const rolesBodySchema = z.object({
+  mint: z.string(),
+  holder: z.string(),
+  roles: z.object({
+    minter: z.boolean().optional(),
+    burner: z.boolean().optional(),
+    pauser: z.boolean().optional(),
+    blacklister: z.boolean().optional(),
+    seizer: z.boolean().optional(),
+  }),
 });
 
 export const webhookBodySchema = z.object({
@@ -72,6 +85,7 @@ export type BurnBody = z.infer<typeof burnBodySchema>;
 export type FreezeThawBody = z.infer<typeof freezeThawBodySchema>;
 export type PauseUnpauseBody = z.infer<typeof pauseUnpauseBodySchema>;
 export type SeizeBody = z.infer<typeof seizeBodySchema>;
+export type RolesBody = z.infer<typeof rolesBodySchema>;
 export type WebhookBody = z.infer<typeof webhookBodySchema>;
 export type BlacklistGetQuery = z.infer<typeof blacklistGetQuerySchema>;
 export type BlacklistPostBody = z.infer<typeof blacklistPostBodySchema>;
