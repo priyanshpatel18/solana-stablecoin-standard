@@ -66,6 +66,9 @@ pub struct ThawTokenAccount<'info> {
 
 impl<'info> FreezeTokenAccount<'info> {
     pub fn freeze_token_account(&mut self) -> Result<()> {
+        // Pauser and freezer both have freeze authority. Pausers can freeze accounts during
+        // emergency pause; freezers can freeze for compliance. For separation of duties,
+        // prefer granting only is_freezer when account-level freeze is needed.
         require!(
             self.role.roles.is_pauser || self.role.roles.is_freezer,
             StablecoinError::Unauthorized
@@ -104,6 +107,7 @@ impl<'info> FreezeTokenAccount<'info> {
 
 impl<'info> ThawTokenAccount<'info> {
     pub fn thaw_token_account(&mut self) -> Result<()> {
+        // Same as freeze: pauser or freezer (see freeze_token_account).
         require!(
             self.role.roles.is_pauser || self.role.roles.is_freezer,
             StablecoinError::Unauthorized

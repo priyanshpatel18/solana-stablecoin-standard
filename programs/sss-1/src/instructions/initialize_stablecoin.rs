@@ -75,6 +75,7 @@ impl<'info> InitializeStablecoin<'info> {
             StablecoinError::SymbolTooLong
         );
         require!(params.uri.len() <= MAX_URI_LEN, StablecoinError::UriTooLong);
+        require!(params.decimals <= 18, StablecoinError::InvalidRoleConfig);
 
         // 2. Validate transfer hook program when enable_transfer_hook is true
         if params.enable_transfer_hook {

@@ -17,7 +17,8 @@ pub struct StablecoinState {
     #[max_len(MAX_URI_LEN)]
     pub uri: String,
     pub decimals: u8,
-    /// Feature flags (immutable after init)
+    /// Feature flags. Immutable after init; choose SSS-1 vs SSS-2 at creation.
+    /// Cannot upgrade SSS-1 to SSS-2; create new stablecoin and migrate if needed.
     pub enable_permanent_delegate: bool,
     pub enable_transfer_hook: bool,
     pub default_account_frozen: bool,

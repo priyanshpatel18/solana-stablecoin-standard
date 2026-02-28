@@ -56,6 +56,10 @@ impl<'info> MintTokens<'info> {
         require!(!self.stablecoin.paused, StablecoinError::Paused);
         require!(self.role.roles.is_minter, StablecoinError::Unauthorized);
 
+        // NOTE: Blacklist enforcement for recipients is delegated to the transfer hook
+        // (SSS-2). Direct mint does not check blacklist. Tokens minted to blacklisted
+        // addresses cannot be transferred out (hook blocks transfers) but mint succeeds.
+
         // Enforce per-minter quota
         let minter_info = &mut self.minter_info;
         let new_minted = minter_info
@@ -75,8 +79,9 @@ impl<'info> MintTokens<'info> {
             .ok_or(StablecoinError::MathOverflow)?;
 
         // Validate supply cap BEFORE mint CPI (fail-fast, no state changes).
-        // Manual deserialization: SupplyCap layout is [8-byte discriminator][8-byte cap].
-        // See constants::MIN_SUPPLY_CAP_DATA_LEN, SUPPLY_CAP_VALUE_OFFSET, SUPPLY_CAP_VALUE_SIZE.
+        // Manual deserialization: supply_cap is UncheckedAccount (not writable; program_id
+        // sentinel when no cap). We read and validate without mutability. Layout:
+        // [8-byte discriminator][8-byte cap]. If SupplyCap layout changes, update here.
         if self.supply_cap.key() != crate::ID {
             let (expected_pda, _) =
                 Pubkey::find_program_address(&[SUPPLY_CAP_SEED, stablecoin_key.as_ref()], &crate::ID);

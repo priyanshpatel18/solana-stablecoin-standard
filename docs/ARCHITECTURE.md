@@ -44,5 +44,9 @@ Layer 1 — Base SDK:    Token creation, mint/freeze authority, metadata, role P
 
 ## Program IDs
 
-- **SSS Token (sss-1):** `BMWu6XvhKMXitwv3FCjjm2zZGD4pXeB1KX5oiUcPxGDB`
-- **Transfer Hook (sss-2):** `GtYvo8PY7hV3KWfGHs3fPDyFEHRV4t1PVw6BkYUBgctC`
+Program IDs are deployment-specific. See [DEVNET.md](DEVNET.md) for devnet values.
+
+- **SSS Token (sss-1):** `47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ` (devnet)
+- **Transfer Hook (sss-2):** `8DMsf39fGWfcrWVjfyEq8fqZf5YcTvVPGgdJr8s2S8Nc` (devnet)
+
+Changing the transfer hook program requires recompiling SSS-1 with the new constant and redeploying.

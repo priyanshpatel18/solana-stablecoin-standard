@@ -66,4 +66,4 @@ Anchor constraint violations (e.g. `ConstraintRaw` 0x7d3 / 2003) can also occur 
 3. **Set supply caps**: Use `update_supply_cap` to limit total supply when desired.
 4. **Use SSS-2 for compliance**: Enable transfer hook and blacklist for regulated deployments.
 5. **Audit role grants**: Regularly review who has minter, burner, pauser, and freezer roles.
-6. **Transfer authority**: The current authority can transfer authority to any address in a single step without the new authority signing. Document this design; consider two-step (propose + accept) for critical deployments.
+6. **Transfer authority**: The current authority can transfer authority to any address in a single step without the new authority signing. The new authority does not auto-receive roles. **Procedure:** Either (1) pre-grant roles to new authority via `update_roles`, then call `transfer_authority`; or (2) call `transfer_authority`, then new authority calls `update_roles` to grant themselves roles. Do not lose access to the old authority key until roles are granted.
