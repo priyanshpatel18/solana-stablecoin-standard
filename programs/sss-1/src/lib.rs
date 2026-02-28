@@ -35,16 +35,17 @@ mod tests {
 
     #[test]
     fn role_flags_len_and_serialization() {
-        assert_eq!(RoleFlags::LEN, 5);
+        assert_eq!(RoleFlags::LEN, 6);
         let all = RoleFlags {
             is_minter: true,
             is_burner: true,
             is_pauser: true,
+            is_freezer: true,
             is_blacklister: true,
             is_seizer: true,
         };
         let bytes = all.try_to_vec().unwrap();
-        assert_eq!(bytes.len(), 5);
+        assert_eq!(bytes.len(), 6);
         let decoded: RoleFlags = RoleFlags::deserialize(&mut &bytes[..]).unwrap();
         assert!(decoded.is_minter && decoded.is_seizer);
     }
@@ -147,7 +148,7 @@ pub mod solana_stablecoin_standard {
     }
 
     pub fn update_minter(ctx: Context<UpdateMinter>, quota: u64) -> Result<()> {
-        ctx.accounts.update_minter(quota)
+        ctx.accounts.update_minter(quota, &ctx.bumps)
     }
 
     pub fn transfer_authority(ctx: Context<TransferAuthority>) -> Result<()> {

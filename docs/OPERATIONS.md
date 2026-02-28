@@ -4,7 +4,7 @@ Operator guide for mint, freeze, thaw, pause, blacklist, and seize using the CLI
 
 ## Prerequisites
 
-- Keypair with the required role (authority, minter, burner, pauser, blacklister, seizer).
+- Keypair with the required role (authority, minter, burner, pauser, freezer, blacklister, seizer).
 - For CLI: `--mint <MINT>` for all commands except `init`. Optionally `--keypair`, `--rpc-url`, or env `KEYPAIR`, `RPC_URL`.
 
 ## Mint
@@ -60,7 +60,7 @@ await stable.freezeAccount(signerPubkey, targetAta);
 await stable.thawAccount(signerPubkey, targetAta);
 ```
 
-The signer must have the pauser role.
+The signer must have the pauser or freezer role.
 
 ## Pause / Unpause
 

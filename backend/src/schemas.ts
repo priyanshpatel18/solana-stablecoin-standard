@@ -37,6 +37,7 @@ export const rolesBodySchema = z.object({
     minter: z.boolean().optional(),
     burner: z.boolean().optional(),
     pauser: z.boolean().optional(),
+    freezer: z.boolean().optional(),
     blacklister: z.boolean().optional(),
     seizer: z.boolean().optional(),
   }),

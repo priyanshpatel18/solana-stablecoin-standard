@@ -26,11 +26,11 @@ async function main() {
 
   await stable.updateRoles(authority.publicKey, {
     holder: blacklister.publicKey,
-    roles: { isMinter: false, isBurner: false, isPauser: false, isBlacklister: true, isSeizer: false },
+    roles: { isMinter: false, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: true, isSeizer: false },
   });
   await stable.updateRoles(authority.publicKey, {
     holder: minter.publicKey,
-    roles: { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false },
+    roles: { isMinter: true, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
   });
   await stable.updateMinter(authority.publicKey, { minter: minter.publicKey, quota: BigInt(100_000_000) });
 

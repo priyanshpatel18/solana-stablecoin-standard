@@ -56,7 +56,7 @@ pnpm cli -m <MINT> burn 500000
 
 ### freeze
 
-Freeze a token account (owner's ATA). Requires pauser role.
+Freeze a token account (owner's ATA). Requires pauser or freezer role.
 
 ```
 pnpm cli -m <MINT> freeze <OWNER_PUBKEY>
@@ -66,7 +66,7 @@ pnpm cli -m <MINT> freeze <OWNER_PUBKEY>
 
 ### thaw
 
-Thaw a token account. Requires pauser role.
+Thaw a token account. Requires pauser or freezer role.
 
 ```
 pnpm cli -m <MINT> thaw <OWNER_PUBKEY>
@@ -237,6 +237,7 @@ pnpm cli -m <MINT> roles grant <ADDRESS> --pauser --blacklister --seizer
 | `--minter` | Grant minter role |
 | `--burner` | Grant burner role |
 | `--pauser` | Grant pauser role |
+| `--freezer` | Grant freezer role (freeze/thaw accounts) |
 | `--blacklister` | Grant blacklister role (SSS-2) |
 | `--seizer` | Grant seizer role (SSS-2) |
 

@@ -525,6 +525,7 @@ export class SolanaStablecoin {
       isMinter: params.roles.isMinter,
       isBurner: params.roles.isBurner,
       isPauser: params.roles.isPauser,
+      isFreezer: params.roles.isFreezer,
       isBlacklister: params.roles.isBlacklister,
       isSeizer: params.roles.isSeizer,
     };

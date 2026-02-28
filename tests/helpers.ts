@@ -151,6 +151,7 @@ export interface RoleFlags {
   isMinter: boolean;
   isBurner: boolean;
   isPauser: boolean;
+  isFreezer: boolean;
   isBlacklister: boolean;
   isSeizer: boolean;
 }
@@ -160,6 +161,7 @@ export function serializeRoleFlags(roles: RoleFlags): Buffer {
     roles.isMinter ? 1 : 0,
     roles.isBurner ? 1 : 0,
     roles.isPauser ? 1 : 0,
+    roles.isFreezer ? 1 : 0,
     roles.isBlacklister ? 1 : 0,
     roles.isSeizer ? 1 : 0,
   ]);

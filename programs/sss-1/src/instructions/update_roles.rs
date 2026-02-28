@@ -46,6 +46,7 @@ impl<'info> UpdateRoles<'info> {
             is_minter: roles.is_minter,
             is_burner: roles.is_burner,
             is_pauser: roles.is_pauser,
+            is_freezer: roles.is_freezer,
             is_blacklister: roles.is_blacklister,
             is_seizer: roles.is_seizer,
             updated_by: self.authority.key(),

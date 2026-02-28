@@ -2405,6 +2405,8 @@ pub struct RoleFlags {
 
     pub is_pauser: bool,
 
+    pub is_freezer: bool,
+
     pub is_blacklister: bool,
 
     pub is_seizer: bool,
@@ -2413,24 +2415,18 @@ pub struct RoleFlags {
 impl RoleFlags {
     pub fn new(
         is_minter: bool,
-
         is_burner: bool,
-
         is_pauser: bool,
-
+        is_freezer: bool,
         is_blacklister: bool,
-
         is_seizer: bool,
     ) -> Self {
         Self {
             is_minter,
-
             is_burner,
-
             is_pauser,
-
+            is_freezer,
             is_blacklister,
-
             is_seizer,
         }
     }
@@ -2440,61 +2436,40 @@ impl RoleFlags {
 #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
 pub struct RolesUpdated {
     pub stablecoin: Pubkey,
-
     pub holder: Pubkey,
-
     pub is_minter: bool,
-
     pub is_burner: bool,
-
     pub is_pauser: bool,
-
+    pub is_freezer: bool,
     pub is_blacklister: bool,
-
     pub is_seizer: bool,
-
     pub updated_by: Pubkey,
-
     pub timestamp: i64,
 }
 
 impl RolesUpdated {
     pub fn new(
         stablecoin: Pubkey,
-
         holder: Pubkey,
-
         is_minter: bool,
-
         is_burner: bool,
-
         is_pauser: bool,
-
+        is_freezer: bool,
         is_blacklister: bool,
-
         is_seizer: bool,
-
         updated_by: Pubkey,
-
         timestamp: i64,
     ) -> Self {
         Self {
             stablecoin,
-
             holder,
-
             is_minter,
-
             is_burner,
-
             is_pauser,
-
+            is_freezer,
             is_blacklister,
-
             is_seizer,
-
             updated_by,
-
             timestamp,
         }
     }

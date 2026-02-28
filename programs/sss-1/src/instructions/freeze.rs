@@ -66,7 +66,10 @@ pub struct ThawTokenAccount<'info> {
 
 impl<'info> FreezeTokenAccount<'info> {
     pub fn freeze_token_account(&mut self) -> Result<()> {
-        require!(self.role.roles.is_pauser, StablecoinError::Unauthorized);
+        require!(
+            self.role.roles.is_pauser || self.role.roles.is_freezer,
+            StablecoinError::Unauthorized
+        );
 
         // CPI: freeze_account — stablecoin PDA is the freeze authority
         let mint_key = self.mint.key();
@@ -101,7 +104,10 @@ impl<'info> FreezeTokenAccount<'info> {
 
 impl<'info> ThawTokenAccount<'info> {
     pub fn thaw_token_account(&mut self) -> Result<()> {
-        require!(self.role.roles.is_pauser, StablecoinError::Unauthorized);
+        require!(
+            self.role.roles.is_pauser || self.role.roles.is_freezer,
+            StablecoinError::Unauthorized
+        );
 
         // CPI: thaw_account — stablecoin PDA is the freeze authority
         let mint_key = self.mint.key();

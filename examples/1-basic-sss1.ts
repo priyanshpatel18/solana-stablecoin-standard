@@ -42,6 +42,7 @@ async function main() {
       isMinter: true,
       isBurner: true,
       isPauser: true,
+      isFreezer: false,
       isBlacklister: false,
       isSeizer: false,
     },

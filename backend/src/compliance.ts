@@ -23,7 +23,10 @@ export type AuditAction =
   | "pause"
   | "unpause"
   | "roles"
-  | "blocked";
+  | "blocked"
+  | "authority_transfer"
+  | "minter_update"
+  | "init";
 
 export interface AuditEntry {
   timestamp: string;

@@ -238,7 +238,7 @@ impl FuzzTest {
             &[b"role", stablecoin_pda.as_ref(), attacker.as_ref()],
             &program_id,
         );
-        let roles = RoleFlags::new(true, false, false, false, false);
+        let roles = RoleFlags::new(true, false, false, false, false, false);
         let update_roles_ix = solana_stablecoin_standard::UpdateRolesInstruction::data(
             solana_stablecoin_standard::UpdateRolesInstructionData::new(roles),
         )
@@ -310,7 +310,7 @@ impl FuzzTest {
             .process_transaction(&[init_ix], Some("InitializeStablecoin"));
         self.trident.clear_extra_signers();
 
-        let roles = RoleFlags::new(true, false, false, false, false);
+        let roles = RoleFlags::new(true, false, false, false, false, false);
         let update_roles_ix = solana_stablecoin_standard::UpdateRolesInstruction::data(
             solana_stablecoin_standard::UpdateRolesInstructionData::new(roles),
         )
@@ -425,7 +425,7 @@ impl FuzzTest {
             .process_transaction(&[init_ix], Some("InitializeStablecoin"));
         self.trident.clear_extra_signers();
 
-        let roles = RoleFlags::new(true, false, false, false, false);
+        let roles = RoleFlags::new(true, false, false, false, false, false);
         let update_roles_ix = solana_stablecoin_standard::UpdateRolesInstruction::data(
             solana_stablecoin_standard::UpdateRolesInstructionData::new(roles),
         )

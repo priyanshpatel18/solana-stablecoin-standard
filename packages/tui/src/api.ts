@@ -177,7 +177,7 @@ export async function seize(body: {
 export async function rolesGrant(
   mint: string,
   holder: string,
-  roles: { minter?: boolean; burner?: boolean; pauser?: boolean; blacklister?: boolean; seizer?: boolean }
+  roles: { minter?: boolean; burner?: boolean; pauser?: boolean; freezer?: boolean; blacklister?: boolean; seizer?: boolean }
 ): Promise<SignatureResponse> {
   return request<SignatureResponse>("/operations/roles", {
     method: "POST",
@@ -188,6 +188,7 @@ export async function rolesGrant(
         minter: roles.minter ?? false,
         burner: roles.burner ?? false,
         pauser: roles.pauser ?? false,
+        freezer: roles.freezer ?? false,
         blacklister: roles.blacklister ?? false,
         seizer: roles.seizer ?? false,
       },

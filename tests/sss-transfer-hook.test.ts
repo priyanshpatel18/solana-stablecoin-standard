@@ -129,6 +129,7 @@ describe("Stablecoin with Transfer Hook", () => {
               isMinter: true,
               isBurner: false,
               isPauser: false,
+              isFreezer: false,
               isBlacklister: false,
               isSeizer: false,
             }
@@ -151,6 +152,7 @@ describe("Stablecoin with Transfer Hook", () => {
               isMinter: false,
               isBurner: false,
               isPauser: false,
+              isFreezer: false,
               isBlacklister: true,
               isSeizer: false,
             }
@@ -173,6 +175,7 @@ describe("Stablecoin with Transfer Hook", () => {
               isMinter: false,
               isBurner: false,
               isPauser: false,
+              isFreezer: false,
               isBlacklister: false,
               isSeizer: true,
             }

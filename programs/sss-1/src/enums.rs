@@ -7,10 +7,11 @@ pub struct RoleFlags {
     pub is_minter: bool,
     pub is_burner: bool,
     pub is_pauser: bool,
+    pub is_freezer: bool,
     pub is_blacklister: bool,
     pub is_seizer: bool,
 }
 
 impl RoleFlags {
-    pub const LEN: usize = 5; // 5 booleans
+    pub const LEN: usize = 6; // 6 booleans
 }

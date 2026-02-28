@@ -4,7 +4,7 @@ Backend services for the Solana Stablecoin Standard: mint/burn API, operations, 
 
 ## Mint/Burn Service
 
-HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_ADDRESS`, `PORT`, `API_KEY` (optional).
+HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_ADDRESS`, `PORT`, `API_KEY` (optional), `CORS_ORIGIN` (optional, default `*`), `AUDIT_FROM_CHAIN` (optional, default `true` — enable in-process event listener), `RUN_EVENT_LISTENER` (optional, default `true` — subscribe to program logs for audit). Security: Helmet (headers) and CORS are enabled; configure `CORS_ORIGIN` for production.
 
 **Request ID:** Every response includes an `X-Request-Id` header (generated per request or from client `X-Request-Id`).
 
@@ -39,7 +39,7 @@ HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_A
 ### Operations (protected)
 
 - **POST /operations/freeze**  
-  Body: `{ "mint": "<pubkey>", "account": "<token account pubkey>" }`. Freezes the token account. Backend keypair must hold pauser/freeze role.
+  Body: `{ "mint": "<pubkey>", "account": "<token account pubkey>" }`. Freezes the token account. Backend keypair must hold pauser or freezer role.
 
 - **POST /operations/thaw**  
   Body: `{ "mint": "<pubkey>", "account": "<token account pubkey>" }`. Thaws the token account.
@@ -55,7 +55,7 @@ HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_A
   Derives source and destination token accounts from mint and owner pubkeys; seizes full source balance to destination. `amount` is recorded in the audit log. Backend keypair must hold seizer role (SSS-2).
 
 - **POST /operations/roles**  
-  Body: `{ "mint": "<pubkey>", "holder": "<pubkey>", "roles": { "minter": boolean?, "burner": boolean?, "pauser": boolean?, "blacklister": boolean?, "seizer": boolean? } }`.  
+  Body: `{ "mint": "<pubkey>", "holder": "<pubkey>", "roles": { "minter": boolean?, "burner": boolean?, "pauser": boolean?, "freezer": boolean?, "blacklister": boolean?, "seizer": boolean? } }`.  
   Grants or updates roles for the holder. Backend keypair must be the stablecoin authority. Omitted role flags default to false. Used by the TUI Roles tab.
 
 All operations return `{ success: true, signature: "<tx sig>" }` or `{ error: "<message>" }` with status 400/500.
@@ -67,13 +67,17 @@ All operations return `{ success: true, signature: "<tx sig>" }` or `{ error: "<
 3. Log the returned signature and any metadata for audit.
 4. For redeem: verify and call `POST /burn-request` with amount (and optionally burner).
 
-## Event indexer
+## Event listener (in-process)
 
-Optional process that subscribes to program logs (`onLogs`) for the SSS token program and POSTs each batch to a webhook with retry logic.
+The backend subscribes to program logs (`connection.onLogs`) for the SSS token program on startup. It parses Anchor events (TokensMinted, TokensBurned, AccountFrozen, etc.) into structured audit entries and adds them to the audit store. When `WEBHOOK_URL` is set, parsed events are POSTed to the webhook with retry logic.
 
-- **Env:** `RPC_URL`, `SSS_TOKEN_PROGRAM_ID`, `WEBHOOK_URL` (optional). Retry: `WEBHOOK_MAX_RETRIES` (default 5), `WEBHOOK_TIMEOUT_MS` (default 10000). Exponential backoff between attempts (1s, 2s, 4s, … up to 30s).
-- **Payload (POST to WEBHOOK_URL):** `{ type: "program_logs", programId, signature, logs, err }`.
-- **Retry:** The indexer retries failed POSTs up to `WEBHOOK_MAX_RETRIES` times with exponential backoff; only logs failure after the last attempt.
+- **Env:** `RUN_EVENT_LISTENER` (default `true` — set to `false` to disable), `AUDIT_FROM_CHAIN` (default `true` — set to `false` to disable), `WEBHOOK_URL` (optional), `WEBHOOK_MAX_RETRIES` (default 5), `WEBHOOK_TIMEOUT_MS` (default 10000), `SSS_TOKEN_PROGRAM_ID` (optional, default SSS program ID).
+- **Payload (POST to WEBHOOK_URL):** `{ type, signature, programId, eventName, data }` (structured parsed event, not raw logs).
+- **Audit types from chain:** `mint`, `burn`, `freeze`, `thaw`, `pause`, `unpause`, `blacklist_add`, `blacklist_remove`, `seize`, `roles`, `authority_transfer`, `minter_update`, `init`.
+
+## Standalone indexer (optional)
+
+A separate indexer container (`node dist/indexer.js`) subscribes to program logs and POSTs raw `{ type: "program_logs", programId, signature, logs, err }` to `WEBHOOK_URL`. Use when you need indexer-only (no API) or to forward raw logs to another service.
 
 ## Docker
 
@@ -92,8 +96,8 @@ export WEBHOOK_URL=http://backend:3000/compliance/webhook
 docker compose up --build
 ```
 
-- **Backend** listens on port 3000. Health: `curl http://localhost:3000/health`.
-- **Indexer** subscribes to the SSS program and POSTs each batch to `WEBHOOK_URL` (if set) with retry. No port exposed.
+- **Backend** listens on port 3000. Health: `curl http://localhost:3000/health`. The backend runs an in-process event listener by default; set `RUN_EVENT_LISTENER=false` or `AUDIT_FROM_CHAIN=false` to disable.
+- **Indexer** (optional) subscribes to the SSS program and POSTs raw program logs to `WEBHOOK_URL` (if set) with retry. No port exposed. Use when you want indexer-only (no API) or to forward raw logs elsewhere.
 
 ## Compliance / audit
 
@@ -117,12 +121,15 @@ The backend exposes a **compliance module** (blacklist management, sanctions scr
   Body: `{ address }`. Sanctions screening integration point. If `COMPLIANCE_SCREENING_URL` is set, forwards to that provider; otherwise returns stub `{ screened: true, match: false }`.
 
 - **GET /compliance/audit-log?action=&from=&to=&mint=&format=json|csv**  
-  Returns audit entries. `action`: one of `program_logs`, `blacklist_add`, `blacklist_remove`, `seize`, `mint`, `burn`, `freeze`, `thaw`, `pause`, `unpause`, `blocked`. `format=csv` returns CSV with columns timestamp, type, signature, mint, address, reason, actor, amount.
+  Returns audit entries. `action`: one of `program_logs`, `blacklist_add`, `blacklist_remove`, `seize`, `mint`, `burn`, `freeze`, `thaw`, `pause`, `unpause`, `blocked`, `authority_transfer`, `minter_update`, `init`. `format=csv` returns CSV with columns timestamp, type, signature, mint, address, reason, actor, amount.
 
 ### Env
 
 - `MINT_ADDRESS` — default mint for blacklist/audit when not specified in request.
 - `API_KEY` — optional; when set, protected routes require `X-API-Key` header.
+- `CORS_ORIGIN` — optional; allowed origin(s) for CORS (default `*`).
+- `AUDIT_FROM_CHAIN` — optional; enable in-process event listener (default `true`).
+- `RUN_EVENT_LISTENER` — optional; subscribe to program logs (default `true`).
 - `COMPLIANCE_SCREENING_URL` — optional URL for sanctions screening provider (POST with `{ address }`).
 
 Audit trail format and regulatory notes: see [COMPLIANCE.md](COMPLIANCE.md).

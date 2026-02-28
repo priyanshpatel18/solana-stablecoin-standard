@@ -200,6 +200,7 @@ impl<'info> InitializeStablecoin<'info> {
                 is_minter: true,
                 is_burner: true,
                 is_pauser: true,
+                is_freezer: true,
                 is_blacklister: true,
                 is_seizer: true,
             },

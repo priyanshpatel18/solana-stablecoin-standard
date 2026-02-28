@@ -27,7 +27,7 @@ Layer 1 — Base SDK:    Token creation, mint/freeze authority, metadata, role P
 
 ### Freeze / Thaw
 
-- Authority with pauser capability calls freeze_account or thaw_account; program CPIs to Token-2022 (freeze authority = stablecoin PDA).
+- Authority with pauser or freezer capability calls freeze_account or thaw_account; program CPIs to Token-2022 (freeze authority = stablecoin PDA).
 
 ### SSS-2: Blacklist and Seize
 
@@ -36,7 +36,7 @@ Layer 1 — Base SDK:    Token creation, mint/freeze authority, metadata, role P
 
 ## Security
 
-- **Role-based access:** Master authority, minter (with per-minter quotas), burner, blacklister (SSS-2), pauser, seizer (SSS-2). No single key controls everything.
+- **Role-based access:** Master authority, minter (with per-minter quotas), burner, pauser, freezer, blacklister (SSS-2), seizer (SSS-2). No single key controls everything.
 - **Feature gating:** SSS-2 instructions (add_to_blacklist, remove_from_blacklist, seize) check `enable_permanent_delegate` and `enable_transfer_hook` and return a clear error if compliance was not enabled.
 - **Immutable flags:** `enable_permanent_delegate`, `enable_transfer_hook`, `default_account_frozen` are set once at init and cannot be changed.
 

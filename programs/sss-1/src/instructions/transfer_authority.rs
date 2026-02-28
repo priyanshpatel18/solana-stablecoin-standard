@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::constants::*;
+use crate::error::StablecoinError;
 use crate::events::AuthorityTransferred;
 use crate::state::*;
 
@@ -22,6 +23,15 @@ pub struct TransferAuthority<'info> {
 
 impl<'info> TransferAuthority<'info> {
     pub fn transfer_authority(&mut self) -> Result<()> {
+        require!(
+            self.new_authority.key() != Pubkey::default(),
+            StablecoinError::Unauthorized
+        );
+        require!(
+            self.new_authority.key() != self.stablecoin.authority,
+            StablecoinError::InvalidRoleConfig
+        );
+
         let previous_authority = self.stablecoin.authority;
         self.stablecoin.authority = self.new_authority.key();
 

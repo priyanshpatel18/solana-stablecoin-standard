@@ -58,8 +58,8 @@ const supply = await stable.getTotalSupply();
 
 - `mint(signer, { recipient, amount, minter })` — Mint to recipient (minter must have role and quota).
 - `burn(signer, { amount })` — Burn from signer’s ATA (burner role).
-- `freezeAccount(signer, targetTokenAccount)` — Freeze account (pauser role).
-- `thawAccount(signer, targetTokenAccount)` — Thaw account (pauser role).
+- `freezeAccount(signer, targetTokenAccount)` — Freeze account (pauser or freezer role).
+- `thawAccount(signer, targetTokenAccount)` — Thaw account (pauser or freezer role).
 - `pause(signer)` / `unpause(signer)` — Pause/unpause (pauser role).
 - `updateRoles(signer, { holder, roles })` — Set role flags for a holder (authority).
 - `updateMinter(signer, { minter, quota })` — Set minter quota (authority).

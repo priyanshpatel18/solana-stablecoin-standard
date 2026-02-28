@@ -45,6 +45,7 @@ export interface RoleFlags {
   isMinter: boolean;
   isBurner: boolean;
   isPauser: boolean;
+  isFreezer: boolean;
   isBlacklister: boolean;
   isSeizer: boolean;
 }

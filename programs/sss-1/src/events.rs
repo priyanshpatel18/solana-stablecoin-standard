@@ -67,6 +67,7 @@ pub struct RolesUpdated {
     pub is_minter: bool,
     pub is_burner: bool,
     pub is_pauser: bool,
+    pub is_freezer: bool,
     pub is_blacklister: bool,
     pub is_seizer: bool,
     pub updated_by: Pubkey,

@@ -60,6 +60,12 @@ pub struct Seize<'info> {
 
 impl<'info> Seize<'info> {
     pub fn seize(&mut self) -> Result<()> {
+        // NOTE: Seizure uses the transfer hook CPI (invoke_transfer_checked). If the SSS transfer
+        // hook enforces blacklist checks on source or destination, and either account is blacklisted,
+        // the hook may block the seizure. Seizures are intended to move tokens from a seized account
+        // to the treasury; ensure the transfer hook is configured to allow seizure flows, or that
+        // source/dest are not blacklisted when invoking this instruction.
+
         // Feature gate: only SSS-2 tokens support seizure
         require!(
             self.stablecoin.enable_permanent_delegate,

@@ -13,6 +13,7 @@ const ROLE_KEYS: Array<{ key: string; label: string; field: keyof RolesState }> 
   { key: "m", label: "Minter", field: "minter" },
   { key: "b", label: "Burner", field: "burner" },
   { key: "p", label: "Pauser", field: "pauser" },
+  { key: "f", label: "Freezer", field: "freezer" },
   { key: "l", label: "Blacklister", field: "blacklister" },
   { key: "z", label: "Seizer", field: "seizer" },
 ];
@@ -21,6 +22,7 @@ type RolesState = {
   minter: boolean;
   burner: boolean;
   pauser: boolean;
+  freezer: boolean;
   blacklister: boolean;
   seizer: boolean;
 };
@@ -29,6 +31,7 @@ const defaultRoles: RolesState = {
   minter: false,
   burner: false,
   pauser: false,
+  freezer: false,
   blacklister: false,
   seizer: false,
 };
@@ -42,7 +45,7 @@ export default function RolesView({ mint, onSuccess, onError }: Props) {
   useInput((input, key) => {
     if (step !== "roles") return;
     if (key.return) {
-      const hasAny = roles.minter || roles.burner || roles.pauser || roles.blacklister || roles.seizer;
+      const hasAny = roles.minter || roles.burner || roles.pauser || roles.freezer || roles.blacklister || roles.seizer;
       if (hasAny) submit();
       return;
     }
@@ -56,7 +59,7 @@ export default function RolesView({ mint, onSuccess, onError }: Props) {
     if (!holder.trim()) return;
     const hasAny = roles.minter || roles.burner || roles.pauser || roles.blacklister || roles.seizer;
     if (!hasAny) {
-      onError("Select at least one role (m/b/p/l/z).");
+      onError("Select at least one role (m/b/p/f/l/z).");
       return;
     }
     setSubmitting(true);
@@ -65,6 +68,7 @@ export default function RolesView({ mint, onSuccess, onError }: Props) {
         minter: roles.minter,
         burner: roles.burner,
         pauser: roles.pauser,
+        freezer: roles.freezer,
         blacklister: roles.blacklister,
         seizer: roles.seizer,
       });
@@ -104,11 +108,11 @@ export default function RolesView({ mint, onSuccess, onError }: Props) {
   return (
     <Box flexDirection="column">
       <Text>Holder: {holder}</Text>
-      <Text>Toggles: m=Minter b=Burner p=Pauser l=Blacklister z=Seizer</Text>
+      <Text>Toggles: m=Minter b=Burner p=Pauser f=Freezer l=Blacklister z=Seizer</Text>
       <Text>
         {" "}
         [{roles.minter ? "x" : " "}] Minter [{roles.burner ? "x" : " "}] Burner [{roles.pauser ? "x" : " "}] Pauser [
-        {roles.blacklister ? "x" : " "}] Blacklister [{roles.seizer ? "x" : " "}] Seizer
+        {roles.freezer ? "x" : " "}] Freezer [{roles.blacklister ? "x" : " "}] Blacklister [{roles.seizer ? "x" : " "}] Seizer
       </Text>
       <Text dimColor>Press keys to toggle, Enter to grant (authority signs).</Text>
     </Box>

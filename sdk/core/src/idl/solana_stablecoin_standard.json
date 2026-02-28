@@ -1885,6 +1885,10 @@
             "type": "bool"
           },
           {
+            "name": "is_freezer",
+            "type": "bool"
+          },
+          {
             "name": "is_blacklister",
             "type": "bool"
           },
@@ -1918,6 +1922,10 @@
           },
           {
             "name": "is_pauser",
+            "type": "bool"
+          },
+          {
+            "name": "is_freezer",
             "type": "bool"
           },
           {

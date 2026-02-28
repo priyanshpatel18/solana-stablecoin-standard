@@ -40,6 +40,7 @@ describe("Simple Stablecoin Lifecycle", () => {
   let burnerKeypair: Keypair;
   let recipientKeypair: Keypair;
   let newAuthority: Keypair;
+  let quotaTestMinter: Keypair;
 
   before(async () => {
     mintKeypair = Keypair.generate();
@@ -47,11 +48,12 @@ describe("Simple Stablecoin Lifecycle", () => {
     burnerKeypair = Keypair.generate();
     recipientKeypair = Keypair.generate();
     newAuthority = Keypair.generate();
+    quotaTestMinter = Keypair.generate();
 
     // Fund keypairs via SOL transfer from provider (economic: 0.1 SOL each)
     const LAMPORTS_PER_KEYPAIR = 100_000_000;
     const tx = new Transaction();
-    for (const kp of [minterKeypair, burnerKeypair, recipientKeypair, newAuthority]) {
+    for (const kp of [minterKeypair, burnerKeypair, recipientKeypair, newAuthority, quotaTestMinter]) {
       tx.add(
         SystemProgram.transfer({
           fromPubkey: authority.publicKey,
@@ -117,6 +119,7 @@ describe("Simple Stablecoin Lifecycle", () => {
           isMinter: true,
           isBurner: false,
           isPauser: false,
+          isFreezer: false,
           isBlacklister: false,
           isSeizer: false,
         }
@@ -200,6 +203,7 @@ describe("Simple Stablecoin Lifecycle", () => {
               isMinter: true,
               isBurner: true,
               isPauser: false,
+              isFreezer: false,
               isBlacklister: false,
               isSeizer: false,
             }
@@ -414,6 +418,7 @@ describe("Simple Stablecoin Lifecycle", () => {
               isMinter: false,
               isBurner: false,
               isPauser: false,
+              isFreezer: false,
               isBlacklister: false,
               isSeizer: false,
             }
@@ -463,7 +468,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             nonBurnerRole,
             newAuthority.publicKey,
-            { isMinter: false, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false }
+            { isMinter: false, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ),
         [authority]
@@ -502,7 +507,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             nonPauserRole,
             newAuthority.publicKey,
-            { isMinter: false, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false }
+            { isMinter: false, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ),
         [authority]
@@ -532,7 +537,7 @@ describe("Simple Stablecoin Lifecycle", () => {
               stablecoinPDA,
               authorityRole,
               authority.publicKey,
-              { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false }
+              { isMinter: true, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
             )
           ),
           [newAuthority]
@@ -678,18 +683,39 @@ describe("Simple Stablecoin Lifecycle", () => {
   describe("Quota and supply", () => {
     it("rejects mint with amount exceeding quota", async () => {
       const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
-      const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
-      const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
+      const [quotaTestMinterRole] = findRolePDA(stablecoinPDA, quotaTestMinter.publicKey);
+      const [quotaTestMinterInfo] = findMinterPDA(stablecoinPDA, quotaTestMinter.publicKey);
       const recipientATA = getTokenAccountAddress(mintKeypair.publicKey, recipientKeypair.publicKey);
 
+      // Use a fresh minter (quotaTestMinter) with no prior mints so we can set quota to 100
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          buildUpdateRolesIx(
+            authority.publicKey,
+            stablecoinPDA,
+            quotaTestMinterRole,
+            quotaTestMinter.publicKey,
+            {
+              isMinter: true,
+              isBurner: false,
+              isPauser: false,
+              isFreezer: false,
+              isBlacklister: false,
+              isSeizer: false,
+            }
+          )
+        ),
+        [authority]
+      );
       await sendAndConfirmTransaction(
         connection,
         new Transaction().add(
           buildUpdateMinterIx(
             authority.publicKey,
             stablecoinPDA,
-            minterInfo,
-            minterKeypair.publicKey,
+            quotaTestMinterInfo,
+            quotaTestMinter.publicKey,
             BigInt(100)
           )
         ),
@@ -700,35 +726,22 @@ describe("Simple Stablecoin Lifecycle", () => {
           connection,
           new Transaction().add(
             buildMintTokensIx(
-              minterKeypair.publicKey,
+              quotaTestMinter.publicKey,
               stablecoinPDA,
-              minterRole,
-              minterInfo,
+              quotaTestMinterRole,
+              quotaTestMinterInfo,
               mintKeypair.publicKey,
               recipientATA,
               BigInt(1000)
             )
           ),
-          [minterKeypair]
+          [quotaTestMinter]
         );
         expect.fail("Should reject mint exceeding quota");
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         expect(msg).to.match(/QuotaExceeded|Simulation failed|custom program error|0x/i);
       }
-      await sendAndConfirmTransaction(
-        connection,
-        new Transaction().add(
-          buildUpdateMinterIx(
-            authority.publicKey,
-            stablecoinPDA,
-            minterInfo,
-            minterKeypair.publicKey,
-            BigInt(1_000_000)
-          )
-        ),
-        [authority]
-      );
     });
 
     it("mint then burn then supply is consistent", async () => {
@@ -749,7 +762,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             findRolePDA(stablecoinPDA, minterKeypair.publicKey)[0],
             minterKeypair.publicKey,
-            { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false }
+            { isMinter: true, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ).add(
           buildUpdateMinterIx(
@@ -785,7 +798,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             burnerRole,
             burnerKeypair.publicKey,
-            { isMinter: true, isBurner: true, isPauser: false, isBlacklister: false, isSeizer: false }
+            { isMinter: true, isBurner: true, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ),
         [authority]
@@ -1043,7 +1056,7 @@ describe("Simple Stablecoin Lifecycle", () => {
               stablecoinPDA,
               newAuthorityRole,
               newAuthority.publicKey,
-              { isMinter: false, isBurner: false, isPauser: true, isBlacklister: false, isSeizer: false }
+              { isMinter: false, isBurner: false, isPauser: true, isFreezer: false, isBlacklister: false, isSeizer: false }
             )
           )
           .add(
@@ -1052,7 +1065,7 @@ describe("Simple Stablecoin Lifecycle", () => {
               stablecoinPDA,
               authorityRole,
               authority.publicKey,
-              { isMinter: false, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false }
+              { isMinter: false, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
             )
           ),
         [authority]
@@ -1092,7 +1105,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             newAuthorityRole,
             newAuthority.publicKey,
-            { isMinter: false, isBurner: false, isPauser: true, isBlacklister: false, isSeizer: false }
+            { isMinter: false, isBurner: false, isPauser: true, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ),
         [authority]
@@ -1121,7 +1134,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             authorityRole,
             authority.publicKey,
-            { isMinter: false, isBurner: false, isPauser: true, isBlacklister: false, isSeizer: false }
+            { isMinter: false, isBurner: false, isPauser: true, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ),
         [newAuthority]
@@ -1162,7 +1175,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             burnerOnlyRole,
             recipientKeypair.publicKey,
-            { isMinter: false, isBurner: true, isPauser: false, isBlacklister: false, isSeizer: false }
+            { isMinter: false, isBurner: true, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ),
         [authority]
@@ -1248,7 +1261,7 @@ describe("Simple Stablecoin Lifecycle", () => {
             stablecoinPDA,
             minterOnlyRole,
             recipientKeypair.publicKey,
-            { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false }
+            { isMinter: true, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
           )
         ),
         [authority]

@@ -22,7 +22,7 @@ pub struct AddToBlacklist<'info> {
     pub role: Account<'info, RoleAccount>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = blacklister,
         space = BlacklistEntry::LEN,
         seeds = [BLACKLIST_SEED, stablecoin.key().as_ref(), address.key().as_ref()],
@@ -80,6 +80,11 @@ impl<'info> AddToBlacklist<'info> {
             reason.len() <= MAX_REASON_LEN,
             StablecoinError::ReasonTooLong
         );
+
+        // Return custom error when address is already blacklisted (init_if_needed loads existing account)
+        if self.blacklist_entry.address != Pubkey::default() {
+            return Err(StablecoinError::AlreadyBlacklisted.into());
+        }
 
         self.blacklist_entry.set_inner(BlacklistEntry {
             stablecoin: self.stablecoin.key(),

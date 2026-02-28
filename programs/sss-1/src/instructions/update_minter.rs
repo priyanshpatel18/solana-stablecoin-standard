@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::constants::*;
+use crate::error::StablecoinError;
 use crate::state::*;
 use crate::MinterUpdated;
 
@@ -32,13 +33,18 @@ pub struct UpdateMinter<'info> {
 }
 
 impl<'info> UpdateMinter<'info> {
-    pub fn update_minter(&mut self, quota: u64) -> Result<()> {
+    pub fn update_minter(&mut self, quota: u64, bumps: &UpdateMinterBumps) -> Result<()> {
+        require!(
+            quota >= self.minter_info.minted_amount,
+            StablecoinError::QuotaExceeded
+        );
+
         self.minter_info.set_inner(MinterInfo {
             stablecoin: self.stablecoin.key(),
             minter: self.minter.key(),
             quota,
             minted_amount: self.minter_info.minted_amount, // Preserve existing minted_amount (don't reset on quota update)
-            bump: self.minter_info.bump,
+            bump: bumps.minter_info,
         });
 
         emit!(MinterUpdated {

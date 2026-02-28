@@ -31,11 +31,11 @@ async function main() {
 
   await stable.updateRoles(authority.publicKey, {
     holder: minter.publicKey,
-    roles: { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false },
+    roles: { isMinter: true, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
   });
   await stable.updateRoles(authority.publicKey, {
     holder: burner.publicKey,
-    roles: { isMinter: false, isBurner: true, isPauser: false, isBlacklister: false, isSeizer: false },
+    roles: { isMinter: false, isBurner: true, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
   });
   await stable.updateMinter(authority.publicKey, { minter: minter.publicKey, quota: BigInt(50_000_000) });
 
@@ -68,7 +68,7 @@ async function main() {
 
   await stable.updateRoles(authority.publicKey, {
     holder: recipient.publicKey,
-    roles: { isMinter: false, isBurner: true, isPauser: false, isBlacklister: false, isSeizer: false },
+    roles: { isMinter: false, isBurner: true, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
   });
   await stable.burn(recipient.publicKey, { amount: BigInt(5_000_000) });
   console.log("Burned 5 from recipient");

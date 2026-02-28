@@ -103,8 +103,18 @@ impl<'info> MintTokens<'info> {
             let (expected_pda, _) =
                 Pubkey::find_program_address(&[SUPPLY_CAP_SEED, stablecoin_key.as_ref()], &crate::ID);
             if self.supply_cap.key() == expected_pda {
+                require_eq!(
+                    self.supply_cap.owner,
+                    &crate::ID,
+                    StablecoinError::Unauthorized
+                );
                 let cap_data = self.supply_cap.try_borrow_data()?;
-                let cap = u64::from_le_bytes(cap_data[8..16].try_into().unwrap());
+                require!(cap_data.len() >= 16, StablecoinError::MathOverflow);
+                let cap = u64::from_le_bytes(
+                    cap_data[8..16]
+                        .try_into()
+                        .map_err(|_| StablecoinError::MathOverflow)?,
+                );
                 if cap != u64::MAX && stablecoin.total_minted > cap {
                     return Err(StablecoinError::SupplyCapExceeded.into());
                 }

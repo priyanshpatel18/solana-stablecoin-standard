@@ -1,5 +1,7 @@
 import "dotenv/config";
+import cors from "cors";
 import express from "express";
+import helmet from "helmet";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import * as fs from "fs";
@@ -9,6 +11,7 @@ import {
   addAuditEntry,
   isAddressBlocked,
 } from "./compliance";
+import { subscribeToProgramLogs } from "./events";
 import { logger } from "./logger";
 import { requestIdMiddleware, requestLogMiddleware } from "./middleware/requestId";
 import { apiKeyMiddleware } from "./middleware/auth";
@@ -31,6 +34,14 @@ const PORT = parseInt(process.env.PORT || "3000", 10);
 
 const connection = new Connection(RPC_URL);
 
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "X-API-Key", "X-Request-Id"],
+  })
+);
 app.use(express.json());
 app.use(requestIdMiddleware);
 app.use(requestLogMiddleware);
@@ -345,6 +356,7 @@ protectedRouter.post("/operations/roles", async (req, res) => {
       isMinter: r.minter ?? false,
       isBurner: r.burner ?? false,
       isPauser: r.pauser ?? false,
+      isFreezer: r.freezer ?? false,
       isBlacklister: r.blacklister ?? false,
       isSeizer: r.seizer ?? false,
     };
@@ -376,4 +388,5 @@ app.use("/", protectedRouter);
 
 app.listen(PORT, () => {
   logger.info({ port: PORT, rpc: RPC_URL, mint: MINT_ADDRESS ?? null }, "SSS backend listening");
+  subscribeToProgramLogs(connection);
 });

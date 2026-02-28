@@ -1,5 +1,8 @@
 # Solana Stablecoin Standard (SSS)
 
+[![tests](https://img.shields.io/badge/tests-42%20SDK-green)](https://github.com/stellar/solana-stablecoin-standard)
+[![Devnet](https://img.shields.io/badge/devnet-deployed-9945FF)](docs/DEVNET.md)
+
 Open-source standards and SDK for stablecoins on Solana — production-ready templates that institutions and builders can fork, customize, and deploy.
 
 ## Overview
@@ -124,6 +127,17 @@ Full operator runbook: [Operations](docs/OPERATIONS.md).
 | Transfer hook (blacklist) | No    | Yes   |
 | Default account frozen    | No    | Yes   |
 | Blacklist / seize         | No    | Yes   |
+
+## Features
+
+| Feature                                  | Supported |
+|------------------------------------------|-----------|
+| Presets (SSS-1, SSS-2)                   | Yes       |
+| Roles (minter, burner, pauser, blacklister, seizer) | Yes |
+| Supply cap                               | Yes       |
+| Oracle (Pyth)                            | Yes       |
+| Admin TUI                                | Yes       |
+| Admin frontend                           | Yes       |
 
 ## Repository Layout
 

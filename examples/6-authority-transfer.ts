@@ -27,7 +27,7 @@ async function main() {
 
   await stable.updateRoles(oldAuthority.publicKey, {
     holder: minter.publicKey,
-    roles: { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false },
+    roles: { isMinter: true, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
   });
   await stable.updateMinter(oldAuthority.publicKey, { minter: minter.publicKey, quota: BigInt(100_000_000) });
   console.log("Old authority assigned minter role");
@@ -38,7 +38,7 @@ async function main() {
   try {
     await stable.updateRoles(oldAuthority.publicKey, {
       holder: minter.publicKey,
-      roles: { isMinter: false, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false },
+      roles: { isMinter: false, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
     });
     console.log("ERROR: old authority should be rejected");
   } catch {
@@ -47,7 +47,7 @@ async function main() {
 
   await stable.updateRoles(newAuthority.publicKey, {
     holder: minter.publicKey,
-    roles: { isMinter: true, isBurner: true, isPauser: false, isBlacklister: false, isSeizer: false },
+    roles: { isMinter: true, isBurner: true, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
   });
   console.log("New authority updated roles");
 }

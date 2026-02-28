@@ -99,7 +99,7 @@ describe("SDK integration (SSS-1 flow)", () => {
       stablecoinPDA,
       minterRole,
       minterKeypair.publicKey,
-      { isMinter: true, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false }
+      { isMinter: true, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
     );
     const updateMinterIx = buildUpdateMinterIx(
       authority.publicKey,
@@ -188,7 +188,7 @@ describe("SDK integration (SSS-1 flow)", () => {
           stablecoinPDA,
           recipientRole,
           recipientKeypair.publicKey,
-          { isMinter: false, isBurner: true, isPauser: false, isBlacklister: false, isSeizer: false }
+          { isMinter: false, isBurner: true, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
         )
       ),
       [authority]
@@ -217,7 +217,7 @@ describe("SDK integration (SSS-1 flow)", () => {
           stablecoinPDA,
           recipientRole,
           recipientKeypair.publicKey,
-          { isMinter: false, isBurner: true, isPauser: false, isBlacklister: false, isSeizer: false }
+          { isMinter: false, isBurner: true, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false }
         )
       ),
       [authority]

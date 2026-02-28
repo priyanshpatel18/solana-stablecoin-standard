@@ -541,7 +541,7 @@ mintersCmd
     const quota = BigInt(cmdOpts.quota ?? "0");
     const sigRoles = await stable.updateRoles(keypair.publicKey, {
       holder: minterPubkey,
-      roles: { isMinter: true, isBurner: true, isPauser: true, isBlacklister: false, isSeizer: false },
+      roles: { isMinter: true, isBurner: true, isPauser: true, isFreezer: false, isBlacklister: false, isSeizer: false },
     });
     logTx(sigRoles, "Roles (minter + burner) tx", globalOpts.rpcUrl);
     const sigQuota = await stable.updateMinter(keypair.publicKey, { minter: minterPubkey, quota });
@@ -566,7 +566,7 @@ mintersCmd
     const minterPubkey = new PublicKey(address);
     const sig = await stable.updateRoles(keypair.publicKey, {
       holder: minterPubkey,
-      roles: { isMinter: false, isBurner: false, isPauser: false, isBlacklister: false, isSeizer: false },
+      roles: { isMinter: false, isBurner: false, isPauser: false, isFreezer: false, isBlacklister: false, isSeizer: false },
     });
     logTx(sig, "Minters remove tx", globalOpts.rpcUrl);
   });
@@ -579,11 +579,12 @@ rolesCmd
   .option("--minter", "Grant minter role")
   .option("--burner", "Grant burner role")
   .option("--pauser", "Grant pauser role")
+  .option("--freezer", "Grant freezer role (freeze/thaw accounts)")
   .option("--blacklister", "Grant blacklister role (SSS-2)")
   .option("--seizer", "Grant seizer role (SSS-2)")
   .action(async function (this: Command, ...args: unknown[]) {
     const [address] = args as [string];
-    const opts = this.opts() as { minter?: boolean; burner?: boolean; pauser?: boolean; blacklister?: boolean; seizer?: boolean };
+    const opts = this.opts() as { minter?: boolean; burner?: boolean; pauser?: boolean; freezer?: boolean; blacklister?: boolean; seizer?: boolean };
     const globalOpts = getGlobalOpts();
     const connection = getConnection(globalOpts.rpcUrl);
     const keypair = getKeypair(globalOpts.keypair);
@@ -600,6 +601,7 @@ rolesCmd
       isMinter: !!opts.minter,
       isBurner: !!opts.burner,
       isPauser: !!opts.pauser,
+      isFreezer: !!opts.freezer,
       isBlacklister: !!opts.blacklister,
       isSeizer: !!opts.seizer,
     };
