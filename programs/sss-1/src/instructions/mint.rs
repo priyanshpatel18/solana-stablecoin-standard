@@ -42,6 +42,11 @@ pub struct MintTokens<'info> {
     /// CHECK: Must be the Token-2022 program — prevents CPI redirection attacks
     #[account(address = spl_token_2022::ID)]
     pub token_program: AccountInfo<'info>,
+
+    /// Optional: Supply cap PDA. Pass program_id if no cap is set (read-only sentinel).
+    /// CHECK: When not program_id, must be the SupplyCap PDA for this stablecoin.
+    /// Using UncheckedAccount to avoid mut constraint (program_id cannot be writable).
+    pub supply_cap: UncheckedAccount<'info>,
 }
 
 impl<'info> MintTokens<'info> {
@@ -86,14 +91,28 @@ impl<'info> MintTokens<'info> {
         minter_info.minted_amount = new_minted;
 
         // Update global stats
+        let stablecoin_key = self.stablecoin.key();
         let stablecoin = &mut self.stablecoin;
         stablecoin.total_minted = stablecoin
             .total_minted
             .checked_add(amount)
             .ok_or(StablecoinError::MathOverflow)?;
 
+        // Enforce supply cap if configured (supply_cap != program_id means cap is set)
+        if self.supply_cap.key() != crate::ID {
+            let (expected_pda, _) =
+                Pubkey::find_program_address(&[SUPPLY_CAP_SEED, stablecoin_key.as_ref()], &crate::ID);
+            if self.supply_cap.key() == expected_pda {
+                let cap_data = self.supply_cap.try_borrow_data()?;
+                let cap = u64::from_le_bytes(cap_data[8..16].try_into().unwrap());
+                if cap != u64::MAX && stablecoin.total_minted > cap {
+                    return Err(StablecoinError::SupplyCapExceeded.into());
+                }
+            }
+        }
+
         emit!(TokensMinted {
-            stablecoin: stablecoin.key(),
+            stablecoin: stablecoin_key,
             minter: self.minter.key(),
             recipient: self.recipient_token_account.key(),
             amount,

@@ -497,6 +497,13 @@
         {
           "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "supply_cap",
+          "docs": [
+            "Optional: Supply cap PDA. Pass program_id if no cap is set (read-only sentinel).",
+            "Using UncheckedAccount to avoid mut constraint (program_id cannot be writable)."
+          ]
         }
       ],
       "args": [
@@ -1163,6 +1170,90 @@
           }
         }
       ]
+    },
+    {
+      "name": "update_supply_cap",
+      "discriminator": [
+        9,
+        215,
+        52,
+        77,
+        1,
+        9,
+        162,
+        17
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "stablecoin",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  99,
+                  111,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stablecoin.mint",
+                "account": "StablecoinState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "supply_cap",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  117,
+                  112,
+                  112,
+                  108,
+                  121,
+                  95,
+                  99,
+                  97,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stablecoin"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "cap",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1216,6 +1307,19 @@
         13,
         187,
         151
+      ]
+    },
+    {
+      "name": "SupplyCap",
+      "discriminator": [
+        120,
+        76,
+        77,
+        82,
+        129,
+        14,
+        220,
+        207
       ]
     }
   ],
@@ -1460,6 +1564,11 @@
       "code": 6013,
       "name": "InvalidRoleConfig",
       "msg": "Invalid role configuration"
+    },
+    {
+      "code": 6014,
+      "name": "SupplyCapExceeded",
+      "msg": "Supply cap exceeded"
     }
   ],
   "types": [
@@ -1983,6 +2092,31 @@
           {
             "name": "timestamp",
             "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SupplyCap",
+      "docs": [
+        "Seeds: [b\"supply_cap\", stablecoin.key().as_ref()]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cap",
+            "docs": [
+              "Maximum total supply (total_minted must not exceed this)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
           }
         ]
       }

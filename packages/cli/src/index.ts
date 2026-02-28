@@ -303,6 +303,65 @@ program
     console.log(supply.toString());
   });
 
+const supplyCap = new Command("supply-cap").description("Supply cap (authority only)");
+supplyCap
+  .command("set <amount>")
+  .description("Set supply cap (0 = remove cap)")
+  .action(async (...args: unknown[]) => {
+    const [amount] = args as [string];
+    const globalOpts = getGlobalOpts();
+    const connection = getConnection(globalOpts.rpcUrl);
+    const keypair = getKeypair(globalOpts.keypair);
+    const mintAddr = globalOpts.mint;
+    if (!mintAddr) {
+      console.error("--mint required");
+      process.exit(1);
+    }
+    const mint = new PublicKey(mintAddr);
+    const prog = loadProgram(connection, keypair);
+    const stable = await SolanaStablecoin.load(prog as never, mint);
+    const cap = BigInt(amount);
+    const sig = await stable.updateSupplyCap(keypair.publicKey, cap);
+    logTx(sig, "Supply cap tx", globalOpts.rpcUrl);
+  });
+supplyCap
+  .command("clear")
+  .description("Remove supply cap")
+  .action(async () => {
+    const globalOpts = getGlobalOpts();
+    const connection = getConnection(globalOpts.rpcUrl);
+    const keypair = getKeypair(globalOpts.keypair);
+    const mintAddr = globalOpts.mint;
+    if (!mintAddr) {
+      console.error("--mint required");
+      process.exit(1);
+    }
+    const mint = new PublicKey(mintAddr);
+    const prog = loadProgram(connection, keypair);
+    const stable = await SolanaStablecoin.load(prog as never, mint);
+    const sig = await stable.updateSupplyCap(keypair.publicKey, BigInt(0));
+    logTx(sig, "Supply cap clear tx", globalOpts.rpcUrl);
+  });
+supplyCap
+  .command("get")
+  .description("Show current supply cap (null = no cap)")
+  .action(async () => {
+    const globalOpts = getGlobalOpts();
+    const connection = getConnection(globalOpts.rpcUrl);
+    const mintAddr = globalOpts.mint;
+    if (!mintAddr) {
+      console.error("--mint required");
+      process.exit(1);
+    }
+    const mint = new PublicKey(mintAddr);
+    const keypair = getKeypair(globalOpts.keypair);
+    const prog = loadProgram(connection, keypair);
+    const stable = await SolanaStablecoin.load(prog as never, mint);
+    const cap = await stable.getSupplyCap();
+    console.log(cap === null ? "null (no cap)" : cap.toString());
+  });
+program.addCommand(supplyCap);
+
 const blacklist = new Command("blacklist").description("Blacklist management (SSS-2)");
 blacklist
   .command("add <address>")
@@ -621,4 +680,8 @@ program
     console.log(text);
   });
 
+// Strip leading "--" from argv (pnpm run cli -- --help passes both)
+if (process.argv[2] === "--") {
+  process.argv.splice(2, 1);
+}
 program.parse();

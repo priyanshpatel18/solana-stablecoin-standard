@@ -9,3 +9,6 @@ pub use role::*;
 
 pub mod blacklist_entry;
 pub use blacklist_entry::*;
+
+pub mod supply_cap;
+pub use supply_cap::*;

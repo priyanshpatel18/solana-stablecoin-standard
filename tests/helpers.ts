@@ -64,6 +64,13 @@ export function findBlacklistPDA(
   );
 }
 
+export function findSupplyCapPDA(stablecoin: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("supply_cap"), stablecoin.toBuffer()],
+    SSS_TOKEN_PROGRAM_ID
+  );
+}
+
 /** ExtraAccountMetaList PDA for transfer hook (seeds: ["extra-account-metas", mint], program: hookProgramId). */
 export function findExtraAccountMetasPDA(
   mint: PublicKey,
@@ -208,6 +215,30 @@ export function buildUpdateMinterIx(
   });
 }
 
+export function buildUpdateSupplyCapIx(
+  authority: PublicKey,
+  stablecoin: PublicKey,
+  supplyCap: PublicKey,
+  cap: bigint
+): TransactionInstruction {
+  const capBuf = Buffer.alloc(8);
+  capBuf.writeBigUInt64LE(cap);
+  const data = Buffer.concat([
+    anchorDiscriminator("update_supply_cap"),
+    capBuf,
+  ]);
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: authority, isSigner: true, isWritable: true },
+      { pubkey: stablecoin, isSigner: false, isWritable: false },
+      { pubkey: supplyCap, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    programId: SSS_TOKEN_PROGRAM_ID,
+    data,
+  });
+}
+
 export function buildMintTokensIx(
   minter: PublicKey,
   stablecoin: PublicKey,
@@ -215,7 +246,8 @@ export function buildMintTokensIx(
   minterInfo: PublicKey,
   mint: PublicKey,
   recipientTokenAccount: PublicKey,
-  amount: bigint
+  amount: bigint,
+  supplyCap: PublicKey = SSS_TOKEN_PROGRAM_ID
 ): TransactionInstruction {
   const amountBuf = Buffer.alloc(8);
   amountBuf.writeBigUInt64LE(amount);
@@ -232,6 +264,7 @@ export function buildMintTokensIx(
       { pubkey: mint, isSigner: false, isWritable: true },
       { pubkey: recipientTokenAccount, isSigner: false, isWritable: true },
       { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: supplyCap, isSigner: false, isWritable: false },
     ],
     programId: SSS_TOKEN_PROGRAM_ID,
     data,

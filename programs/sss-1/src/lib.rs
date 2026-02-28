@@ -26,6 +26,7 @@ mod tests {
         assert_eq!(ROLE_SEED, b"role");
         assert_eq!(MINTER_SEED, b"minter");
         assert_eq!(BLACKLIST_SEED, b"blacklist");
+        assert_eq!(SUPPLY_CAP_SEED, b"supply_cap");
         assert_eq!(MAX_NAME_LEN, 32);
         assert_eq!(MAX_SYMBOL_LEN, 10);
         assert_eq!(MAX_URI_LEN, 200);
@@ -101,6 +102,7 @@ mod tests {
         let _ = StablecoinError::Blacklisted;
         let _ = StablecoinError::MathOverflow;
         let _ = StablecoinError::InvalidRoleConfig;
+        let _ = StablecoinError::SupplyCapExceeded;
     }
 }
 
@@ -150,6 +152,10 @@ pub mod solana_stablecoin_standard {
 
     pub fn transfer_authority(ctx: Context<TransferAuthority>) -> Result<()> {
         ctx.accounts.transfer_authority()
+    }
+
+    pub fn update_supply_cap(ctx: Context<UpdateSupplyCap>, cap: u64) -> Result<()> {
+        ctx.accounts.update_supply_cap(cap)
     }
 
     // === SSS-2 Compliance Instructions ===

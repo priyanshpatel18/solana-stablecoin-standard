@@ -663,6 +663,8 @@ pub mod solana_stablecoin_standard {
         pub recipient_token_account: AccountMeta,
 
         pub token_program: AccountMeta,
+
+        pub supply_cap: AccountMeta,
     }
 
     /// Account pubkeys for MintTokens instruction
@@ -679,6 +681,8 @@ pub mod solana_stablecoin_standard {
         pub mint: Pubkey,
 
         pub recipient_token_account: Pubkey,
+
+        pub supply_cap: Pubkey,
     }
 
     impl MintTokensInstructionAccounts {
@@ -694,6 +698,8 @@ pub mod solana_stablecoin_standard {
             mint: Pubkey,
 
             recipient_token_account: Pubkey,
+
+            supply_cap: Pubkey,
         ) -> Self {
             Self {
                 minter,
@@ -707,6 +713,8 @@ pub mod solana_stablecoin_standard {
                 mint,
 
                 recipient_token_account,
+
+                supply_cap,
             }
         }
     }
@@ -756,6 +764,8 @@ pub mod solana_stablecoin_standard {
                 false,
             );
 
+            self.accounts.supply_cap = AccountMeta::new_readonly(accounts.supply_cap, false);
+
             self
         }
 
@@ -780,6 +790,8 @@ pub mod solana_stablecoin_standard {
             metas.push(self.accounts.recipient_token_account.clone());
 
             metas.push(self.accounts.token_program.clone());
+
+            metas.push(self.accounts.supply_cap.clone());
 
             metas.extend(self.remaining_accounts.clone());
             metas

@@ -365,6 +365,7 @@ impl FuzzTest {
                 minter_info_pda,
                 mint,
                 recipient,
+                program_id,
             ),
         )
         .instruction();
@@ -482,6 +483,7 @@ impl FuzzTest {
                 minter_info_pda,
                 mint,
                 recipient_ata,
+                program_id,
             ),
         )
         .instruction();
@@ -498,6 +500,7 @@ impl FuzzTest {
                 minter_info_pda,
                 mint,
                 recipient_ata,
+                program_id,
             ),
         )
         .instruction();

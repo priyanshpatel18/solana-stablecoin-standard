@@ -43,4 +43,7 @@ pub enum StablecoinError {
 
     #[msg("Invalid role configuration")]
     InvalidRoleConfig,
+
+    #[msg("Supply cap exceeded")]
+    SupplyCapExceeded,
 }

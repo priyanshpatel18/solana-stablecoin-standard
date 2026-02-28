@@ -3,6 +3,7 @@ pub const STABLECOIN_SEED: &[u8] = b"stablecoin";
 pub const ROLE_SEED: &[u8] = b"role";
 pub const MINTER_SEED: &[u8] = b"minter";
 pub const BLACKLIST_SEED: &[u8] = b"blacklist";
+pub const SUPPLY_CAP_SEED: &[u8] = b"supply_cap";
 
 /// Validation limits
 pub const MAX_NAME_LEN: usize = 32;

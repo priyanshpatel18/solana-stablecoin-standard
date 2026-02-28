@@ -19,6 +19,7 @@ import {
   findMinterPDA,
   findBlacklistPDA,
   findExtraAccountMetasPDA,
+  findSupplyCapPDA,
 } from "./pda";
 import type { MintParams, BurnParams, UpdateRolesParams, UpdateMinterParams } from "./types";
 import { normalizeInitializeParams, type CreateStablecoinParams } from "./types";
@@ -279,6 +280,10 @@ export class SolanaStablecoin {
     const connection = this.provider.connection;
     const needsAta = !(await connection.getAccountInfo(recipientAta));
 
+    const [supplyCapPda] = findSupplyCapPDA(this.stablecoin, this.program.programId);
+    const supplyCapInfo = await connection.getAccountInfo(supplyCapPda);
+    const supplyCapAccount = supplyCapInfo ? supplyCapPda : this.program.programId;
+
     const mintAccounts = {
       minter: params.minter,
       stablecoin: this.stablecoin,
@@ -287,6 +292,7 @@ export class SolanaStablecoin {
       mint: this.mintAddress,
       recipientTokenAccount: recipientAta,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
+      supplyCap: supplyCapAccount,
     };
     const mintIxBuilder = (this.program.methods as unknown as {
       mintTokens: (amount: BN) => {
@@ -334,6 +340,41 @@ export class SolanaStablecoin {
     const signerKeypair = signer instanceof Keypair ? signer : null;
 
     const burnerAta = this.getRecipientTokenAccount(signerPubkey);
+    const amount = BigInt(params.amount.toString());
+
+    // Pre-check: burner's token account must exist and have sufficient balance
+    try {
+      const account = await getAccount(
+        this.provider.connection,
+        burnerAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      const balance = account.amount;
+      if (balance < amount) {
+        throw new Error(
+          `Insufficient balance: signer has ${balance.toString()} tokens, tried to burn ${amount.toString()}. ` +
+            "Burn burns from the signer's token account. Mint to the signer first, or burn less."
+        );
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e.message.includes("Insufficient balance")) throw e;
+        const isNotFound =
+          e.name === "TokenAccountNotFoundError" ||
+          e.message.includes("could not find account") ||
+          e.message.includes("Account does not exist");
+        if (isNotFound) {
+          throw new Error(
+            `Burner's token account does not exist. ` +
+              `The signer (${signerPubkey.toBase58()}) must hold tokens before burning. ` +
+              "Mint tokens to the signer first."
+          );
+        }
+      }
+      throw e;
+    }
+
     const [rolePda] = findRolePDA(this.stablecoin, signerPubkey, this.program.programId);
     const burnIxBuilder = (this.program.methods as unknown as {
       burnTokens: (amount: BN) => {
@@ -369,6 +410,29 @@ export class SolanaStablecoin {
     signer: PublicKey,
     targetTokenAccount: PublicKey
   ): Promise<string> {
+    // Pre-check: target token account must exist
+    try {
+      await getAccount(
+        this.provider.connection,
+        targetTokenAccount,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+    } catch (e) {
+      const isNotFound =
+        e instanceof Error &&
+        (e.name === "TokenAccountNotFoundError" ||
+          e.message.includes("could not find account") ||
+          e.message.includes("Account does not exist"));
+      if (isNotFound) {
+        throw new Error(
+          `Token account does not exist: ${targetTokenAccount.toBase58()}. ` +
+            "The owner must have a token account for this mint. Mint to that owner first."
+        );
+      }
+      throw e;
+    }
+
     const [rolePda] = findRolePDA(this.stablecoin, signer, this.program.programId);
     return (this.program.methods as unknown as { freezeAccount: () => { accountsStrict: (a: object) => { rpc: () => Promise<string> } } })
       .freezeAccount()
@@ -387,6 +451,29 @@ export class SolanaStablecoin {
     signer: PublicKey,
     targetTokenAccount: PublicKey
   ): Promise<string> {
+    // Pre-check: target token account must exist
+    try {
+      await getAccount(
+        this.provider.connection,
+        targetTokenAccount,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+    } catch (e) {
+      const isNotFound =
+        e instanceof Error &&
+        (e.name === "TokenAccountNotFoundError" ||
+          e.message.includes("could not find account") ||
+          e.message.includes("Account does not exist"));
+      if (isNotFound) {
+        throw new Error(
+          `Token account does not exist: ${targetTokenAccount.toBase58()}. ` +
+            "The owner must have a token account for this mint. Mint to that owner first."
+        );
+      }
+      throw e;
+    }
+
     const [rolePda] = findRolePDA(this.stablecoin, signer, this.program.programId);
     return (this.program.methods as unknown as { thawAccount: () => { accountsStrict: (a: object) => { rpc: () => Promise<string> } } })
       .thawAccount()
@@ -472,6 +559,27 @@ export class SolanaStablecoin {
         systemProgram: SYSTEM_PROGRAM_ID,
       })
       .rpc();
+  }
+
+  async updateSupplyCap(signer: PublicKey, cap: bigint): Promise<string> {
+    const [supplyCapPda] = findSupplyCapPDA(this.stablecoin, this.program.programId);
+    return (this.program.methods as unknown as { updateSupplyCap: (cap: BN) => { accountsStrict: (a: object) => { rpc: () => Promise<string> } } })
+      .updateSupplyCap(new BN(cap.toString()))
+      .accountsStrict({
+        authority: signer,
+        stablecoin: this.stablecoin,
+        supplyCap: supplyCapPda,
+        systemProgram: SYSTEM_PROGRAM_ID,
+      })
+      .rpc();
+  }
+
+  async getSupplyCap(): Promise<bigint | null> {
+    const [supplyCapPda] = findSupplyCapPDA(this.stablecoin, this.program.programId);
+    const info = await this.provider.connection.getAccountInfo(supplyCapPda);
+    if (!info?.data || info.data.length < 16) return null;
+    const cap = info.data.readBigUInt64LE(8);
+    return cap === BigInt("18446744073709551615") ? null : cap; // u64::MAX = no cap
   }
 
   async transferAuthority(
