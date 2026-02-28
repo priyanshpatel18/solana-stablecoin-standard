@@ -288,7 +288,11 @@ impl Trident {
     pub fn airdrop(&mut self, address: &Pubkey, amount: u64) {
         let mut account = self.get_account(address);
 
-        account.set_lamports(account.lamports() + amount);
+        let new_lamports = account
+            .lamports()
+            .checked_add(amount)
+            .expect("lamports overflow in airdrop");
+        account.set_lamports(new_lamports);
         self.set_account_custom(address, &account);
     }
 

@@ -3,9 +3,11 @@ use anchor_lang::prelude::*;
 
 /// Seeds: [b"blacklist", stablecoin.key().as_ref(), address.key().as_ref()]
 #[account]
+#[derive(InitSpace)]
 pub struct BlacklistEntry {
     pub stablecoin: Pubkey,
     pub address: Pubkey,
+    #[max_len(MAX_REASON_LEN)]
     pub reason: String,
     pub blacklisted_at: i64,
     pub blacklisted_by: Pubkey,
@@ -13,11 +15,17 @@ pub struct BlacklistEntry {
 }
 
 impl BlacklistEntry {
-    pub const LEN: usize = 8   // discriminator
-        + 32                    // stablecoin
-        + 32                    // address
-        + (4 + MAX_REASON_LEN)  // reason
-        + 8                     // blacklisted_at
-        + 32                    // blacklisted_by
-        + 1; // bump
+    pub const LEN: usize = 8usize
+        .checked_add(32)
+        .unwrap()
+        .checked_add(32)
+        .unwrap()
+        .checked_add(4usize.checked_add(MAX_REASON_LEN).unwrap())
+        .unwrap()
+        .checked_add(8)
+        .unwrap()
+        .checked_add(32)
+        .unwrap()
+        .checked_add(1)
+        .unwrap();
 }

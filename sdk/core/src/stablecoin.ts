@@ -28,7 +28,6 @@ const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
   "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
 );
 const SYSTEM_PROGRAM_ID = new PublicKey("11111111111111111111111111111111");
-const SYSVAR_RENT_ID = new PublicKey("SysvarRent111111111111111111111111111111111");
 
 type SSSIDL = typeof idl;
 type SSSProgram = Program;
@@ -49,7 +48,7 @@ export interface StablecoinState {
   bump: number;
 }
 
-function toStablecoinState(raw: unknown): StablecoinState {
+export function toStablecoinState(raw: unknown): StablecoinState {
   const r = raw as Record<string, unknown>;
   const toBN = (v: unknown): BN => {
     if (v == null) return new BN(0);
@@ -170,7 +169,6 @@ export class SolanaStablecoin {
           transferHookProgram: SSS_HOOK_PROGRAM_ID,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: SYSTEM_PROGRAM_ID,
-          rent: SYSVAR_RENT_ID,
         })
         .signers([mintKeypair])
         .rpc();
@@ -255,7 +253,8 @@ export class SolanaStablecoin {
   }
 
   async getTotalSupply(): Promise<BN> {
-    const state = await this.getState();
+    await this.refresh();
+    const state = this._state!;
     return state.total_minted.sub(state.total_burned);
   }
 
@@ -269,7 +268,11 @@ export class SolanaStablecoin {
     );
   }
 
-  async mint(signer: PublicKey, params: MintParams): Promise<string> {
+  async mint(signer: PublicKey | Keypair, params: MintParams): Promise<string> {
+    const signerPubkey =
+      signer instanceof Keypair ? signer.publicKey : new PublicKey(signer);
+    const signerKeypair = signer instanceof Keypair ? signer : null;
+
     const [rolePda] = findRolePDA(this.stablecoin, params.minter, this.program.programId);
     const [minterInfoPda] = findMinterPDA(this.stablecoin, params.minter, this.program.programId);
     const recipientAta = this.getRecipientTokenAccount(params.recipient);
@@ -296,41 +299,70 @@ export class SolanaStablecoin {
       .mintTokens(new BN(params.amount.toString()))
       .accountsStrict(mintAccounts);
 
+    const mintIx = await mintIxBuilder.instruction();
+
     if (needsAta) {
       const createAtaIx = createAssociatedTokenAccountInstruction(
-        signer,
+        signerPubkey,
         recipientAta,
         params.recipient,
         this.mintAddress,
         TOKEN_2022_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
-      const mintIx = await mintIxBuilder.instruction();
       const { blockhash } = await connection.getLatestBlockhash();
       const tx = new Transaction().add(createAtaIx, mintIx);
       tx.recentBlockhash = blockhash;
-      tx.feePayer = signer;
-      const sig = await this.provider.sendAndConfirm(tx);
-      return sig;
+      tx.feePayer = signerPubkey;
+      const extraSigners = signerKeypair ? [signerKeypair] : [];
+      return this.provider.sendAndConfirm(tx, extraSigners);
     }
 
+    if (signerKeypair) {
+      const { blockhash } = await connection.getLatestBlockhash();
+      const tx = new Transaction().add(mintIx);
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = this.provider.wallet.publicKey;
+      return this.provider.sendAndConfirm(tx, [signerKeypair]);
+    }
     return mintIxBuilder.rpc();
   }
 
-  async burn(signer: PublicKey, params: BurnParams): Promise<string> {
-    const burnerAta = this.getRecipientTokenAccount(signer);
-    const [rolePda] = findRolePDA(this.stablecoin, signer, this.program.programId);
-    return (this.program.methods as unknown as { burnTokens: (amount: BN) => { accountsStrict: (a: object) => { rpc: () => Promise<string> } } })
+  async burn(signer: PublicKey | Keypair, params: BurnParams): Promise<string> {
+    const signerPubkey =
+      signer instanceof Keypair ? signer.publicKey : new PublicKey(signer);
+    const signerKeypair = signer instanceof Keypair ? signer : null;
+
+    const burnerAta = this.getRecipientTokenAccount(signerPubkey);
+    const [rolePda] = findRolePDA(this.stablecoin, signerPubkey, this.program.programId);
+    const burnIxBuilder = (this.program.methods as unknown as {
+      burnTokens: (amount: BN) => {
+        accountsStrict: (a: object) => {
+          rpc: () => Promise<string>;
+          instruction: () => Promise<TransactionInstruction>;
+        };
+      };
+    })
       .burnTokens(new BN(params.amount.toString()))
       .accountsStrict({
-        burner: signer,
+        burner: signerPubkey,
         stablecoin: this.stablecoin,
         role: rolePda,
         mint: this.mintAddress,
         burnerTokenAccount: burnerAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc();
+      });
+
+    if (signerKeypair) {
+      const burnIx = await burnIxBuilder.instruction();
+      const connection = this.provider.connection;
+      const { blockhash } = await connection.getLatestBlockhash();
+      const tx = new Transaction().add(burnIx);
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = this.provider.wallet.publicKey;
+      return this.provider.sendAndConfirm(tx, [signerKeypair]);
+    }
+    return burnIxBuilder.rpc();
   }
 
   async freezeAccount(

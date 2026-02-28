@@ -46,6 +46,14 @@ For SSS, Trident helps catch overflow bugs, role/authorization mistakes, and inv
 - **Roles:** Only master can update roles; only minters can mint (within quota); only blacklister can add/remove blacklist; only seizer can seize.
 - **Overflow:** Mint/burn amounts must not overflow when scaled by decimals.
 
+### Negative flows (must-fail)
+
+The fuzz harness asserts that certain transactions fail as expected:
+
+- **flow3 (role escalation):** A keypair that is not the stablecoin authority signs `UpdateRoles`; the tx must fail (constraint or Unauthorized).
+- **flow4 (pause bypass):** After `Pause`, a `MintTokens` tx must fail (e.g. Paused or invalid recipient).
+- **flow5 (arithmetic overflow):** Mint once, then mint `u64::MAX`; the second mint must fail (e.g. MathOverflow or token error).
+
 ### Install and run
 
 1. **Install Trident CLI** (and optionally Honggfuzz for older Trident versions):
@@ -83,9 +91,11 @@ For SSS, Trident helps catch overflow bugs, role/authorization mistakes, and inv
 
 ## Integration Test Files
 
-- **sss-token.test.ts** — SSS-1 flow: initialize, roles, mint, burn, pause, freeze/thaw, transfer authority, error cases.
-- **sss-transfer-hook.test.ts** — SSS-2 flow: initialize with hook, roles, minter quota, extra-account-metas, blacklist, seize, error cases.
-- **sss-sdk.test.ts** — Uses SDK: create stablecoin with helpers, load with `SolanaStablecoin.load`, getState, getTotalSupply, mint via SDK.
+Integration and SDK unit tests total 100+ across the repo.
+
+- **sss-token.test.ts** — SSS-1: initialize, roles, mint, burn, pause, freeze/thaw, transfer authority, error cases, pause bypass, quota/supply, lifecycle, freeze/thaw edge cases, authority transfer, roles isolation.
+- **sss-transfer-hook.test.ts** — SSS-2: initialize with hook, roles, minter quota, extra-account-metas, blacklist, seize, error cases.
+- **sss-sdk.test.ts** — SDK: create stablecoin with helpers, load with `SolanaStablecoin.load`, getState, getTotalSupply, mint via SDK.
 
 ## Preset / Config Tests
 

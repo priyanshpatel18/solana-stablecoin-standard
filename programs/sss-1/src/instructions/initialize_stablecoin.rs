@@ -23,7 +23,6 @@ pub struct InitializeParams {
 }
 
 #[derive(Accounts)]
-#[instruction(params: InitializeParams)]
 pub struct InitializeStablecoin<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -58,7 +57,6 @@ pub struct InitializeStablecoin<'info> {
     #[account(address = spl_token_2022::ID)]
     pub token_program: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>,
 }
 
 impl<'info> InitializeStablecoin<'info> {

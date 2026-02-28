@@ -19,7 +19,6 @@ declare_id!("47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ");
 mod tests {
     use super::*;
     use crate::error::StablecoinError;
-    use anchor_lang::prelude::*;
 
     #[test]
     fn constants_seeds_and_limits() {

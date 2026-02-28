@@ -9,9 +9,12 @@ edition = "2021"
 
 [dependencies]
 borsh = "1.5.3"
+spl-associated-token-account-interface = "1"
+spl-token-2022-interface = "1"
 
 [dependencies.trident-fuzz]
 path = "trident-fuzz"
+features = ["token"]
 
 [[bin]]
 name = "fuzz_0"

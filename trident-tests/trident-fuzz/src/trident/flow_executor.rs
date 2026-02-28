@@ -255,7 +255,9 @@ pub trait FlowExecutor: Send + 'static + Sized {
         let pb = if is_debug_mode {
             None
         } else {
-            let total_flow_calls = iterations * flow_calls_per_iteration;
+            let total_flow_calls = iterations
+                .checked_mul(flow_calls_per_iteration)
+                .expect("total flow calls overflow");
             let pb = indicatif::ProgressBar::new(total_flow_calls);
             pb.set_style(
                 indicatif::ProgressStyle::with_template(
@@ -296,12 +298,13 @@ pub trait FlowExecutor: Send + 'static + Sized {
             fuzzer.reset_fuzz_accounts();
 
             // Handle coverage profiling if enabled
-            Self::handle_coverage_if_enabled(&mut fuzzer, i + 1);
+            let next_i = i.checked_add(1).expect("iteration overflow");
+            Self::handle_coverage_if_enabled(&mut fuzzer, next_i);
 
             // Update progress bar
             if let Some(ref pb) = pb {
                 pb.inc(flow_calls_per_iteration);
-                pb.set_message(format!("Iteration {}/{} completed", i + 1, iterations));
+                pb.set_message(format!("Iteration {}/{} completed", next_i, iterations));
             }
         }
 
@@ -331,7 +334,9 @@ pub trait FlowExecutor: Send + 'static + Sized {
         master_seed: [u8; 32],
     ) {
         let iterations_per_thread = iterations / num_threads as u64;
-        let total_flow_calls = iterations * flow_calls_per_iteration;
+        let total_flow_calls = iterations
+            .checked_mul(flow_calls_per_iteration)
+            .expect("total flow calls overflow");
         let with_exit_code = std::env::var(config::ENV_WITH_EXIT_CODE).is_ok();
         let panic_occurred = Arc::new(AtomicBool::new(false)); // Shared across threads
 
@@ -447,14 +452,18 @@ pub trait FlowExecutor: Send + 'static + Sized {
 
             // Handle coverage profiling (only thread 0 to avoid duplicate work)
             if thread_id == 0 {
-                Self::handle_coverage_if_enabled(&mut fuzzer, i + 1);
+                let next_i = i.checked_add(1).expect("iteration overflow");
+                Self::handle_coverage_if_enabled(&mut fuzzer, next_i);
             }
 
             // Batch progress updates for performance
-            local_counter += flow_calls_per_iteration;
+            local_counter = local_counter
+                .checked_add(flow_calls_per_iteration)
+                .expect("local counter overflow");
+            let last_iteration = thread_iterations.checked_sub(1).unwrap_or(0);
             let should_update = local_counter >= config::PROGRESS_UPDATE_INTERVAL
                 || last_update.elapsed() >= config::PROGRESS_UPDATE_DURATION
-                || i == thread_iterations - 1; // Always update on last iteration
+                || i == last_iteration; // Always update on last iteration
 
             if should_update {
                 progress_bar.inc(local_counter);

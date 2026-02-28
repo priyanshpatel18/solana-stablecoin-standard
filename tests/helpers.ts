@@ -425,6 +425,26 @@ export function buildAddToBlacklistIx(
   });
 }
 
+export function buildRemoveFromBlacklistIx(
+  blacklister: PublicKey,
+  stablecoin: PublicKey,
+  role: PublicKey,
+  blacklistEntry: PublicKey,
+  address: PublicKey
+): TransactionInstruction {
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: blacklister, isSigner: true, isWritable: true },
+      { pubkey: stablecoin, isSigner: false, isWritable: false },
+      { pubkey: role, isSigner: false, isWritable: false },
+      { pubkey: blacklistEntry, isSigner: false, isWritable: true },
+      { pubkey: address, isSigner: false, isWritable: false },
+    ],
+    programId: SSS_TOKEN_PROGRAM_ID,
+    data: anchorDiscriminator("remove_from_blacklist"),
+  });
+}
+
 /** Build hook's initialize_extra_account_meta_list instruction (SSS-2 with transfer hook). */
 export function buildInitializeExtraAccountMetaListIx(
   authority: PublicKey,

@@ -182,21 +182,39 @@ pub mod sss_transfer_hook {
 ///   1  byte  — paused  ← this is what we read
 fn read_paused_flag(data: &[u8]) -> bool {
     // Skip discriminator + authority + mint
-    let mut offset: usize = 8 + 32 + 32; // 72
+    let mut offset: usize = 8usize
+        .checked_add(32)
+        .and_then(|o| o.checked_add(32))
+        .expect("initial offset overflow"); // 72
 
     // Skip three variable-length Borsh strings (name, symbol, uri)
     for _ in 0..3 {
-        if data.len() < offset + 4 {
+        let end = match offset.checked_add(4) {
+            Some(e) => e,
+            None => return false,
+        };
+        if data.len() < end {
             return false;
         }
-        let str_len = u32::from_le_bytes(
-            data[offset..offset + 4].try_into().unwrap_or([0; 4]),
-        ) as usize;
-        offset += 4 + str_len;
+        let len_slice: [u8; 4] = match data[offset..end].try_into() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        let str_len = u32::from_le_bytes(len_slice) as usize;
+        offset = match offset.checked_add(4) {
+            Some(o) => match o.checked_add(str_len) {
+                Some(o2) => o2,
+                None => return false,
+            },
+            None => return false,
+        };
     }
 
     // Skip decimals(1) + enable_permanent_delegate(1) + enable_transfer_hook(1) + default_account_frozen(1)
-    offset += 4;
+    offset = match offset.checked_add(4) {
+        Some(o) => o,
+        None => return false,
+    };
 
     // Read the paused byte
     if data.len() <= offset {

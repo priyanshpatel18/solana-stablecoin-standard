@@ -97,4 +97,25 @@ describe("PDA derivation", () => {
     );
     expect(pda.equals(expected)).to.be.true;
   });
+
+  it("same seed with different program ID yields different PDA", () => {
+    const [pda1] = findStablecoinPDA(mint, programId);
+    const [pda2] = findStablecoinPDA(mint, SSS_HOOK_PROGRAM_ID);
+    expect(pda1.equals(pda2)).to.be.false;
+  });
+
+  it("findStablecoinPDA with all-zero mint yields valid PDA", () => {
+    const allZero = new PublicKey(Buffer.alloc(32, 0));
+    const [pda, bump] = findStablecoinPDA(allZero, programId);
+    expect(pda).to.be.instanceOf(PublicKey);
+    expect(bump).to.be.a("number");
+    expect(bump).to.be.greaterThanOrEqual(0);
+    expect(bump).to.be.lessThanOrEqual(255);
+  });
+
+  it("findRolePDA with same seed different program ID yields different PDA", () => {
+    const [pda1] = findRolePDA(stablecoin, holder, programId);
+    const [pda2] = findRolePDA(stablecoin, holder, SSS_HOOK_PROGRAM_ID);
+    expect(pda1.equals(pda2)).to.be.false;
+  });
 });

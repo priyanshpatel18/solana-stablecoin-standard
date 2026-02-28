@@ -27,4 +27,37 @@ describe("Compliance gating and errors", () => {
     expect(StablecoinErrorCode.Unauthorized).to.equal(6000);
     expect(StablecoinErrorCode.Paused).to.equal(6001);
   });
+
+  it("StablecoinErrorCode has all documented values", () => {
+    expect(StablecoinErrorCode.Unauthorized).to.equal(6000);
+    expect(StablecoinErrorCode.Paused).to.equal(6001);
+    expect(StablecoinErrorCode.ComplianceNotEnabled).to.equal(6002);
+    expect(StablecoinErrorCode.AlreadyBlacklisted).to.equal(6003);
+    expect(StablecoinErrorCode.NotBlacklisted).to.equal(6004);
+    expect(StablecoinErrorCode.QuotaExceeded).to.equal(6005);
+    expect(StablecoinErrorCode.ZeroAmount).to.equal(6006);
+    expect(StablecoinErrorCode.NameTooLong).to.equal(6007);
+    expect(StablecoinErrorCode.SymbolTooLong).to.equal(6008);
+    expect(StablecoinErrorCode.UriTooLong).to.equal(6009);
+    expect(StablecoinErrorCode.ReasonTooLong).to.equal(6010);
+    expect(StablecoinErrorCode.Blacklisted).to.equal(6011);
+    expect(StablecoinErrorCode.MathOverflow).to.equal(6012);
+    expect(StablecoinErrorCode.InvalidRoleConfig).to.equal(6013);
+  });
+
+  it("parseAnchorErrorCode returns first match when multiple codes in logs", () => {
+    const logs = [
+      "Program log: AnchorError thrown in program.",
+      "Error Code: 6000. Error Message: Unauthorized.",
+      "Error Code: 6002. Error Message: Compliance not enabled.",
+    ];
+    expect(parseAnchorErrorCode(logs)).to.equal(6000);
+  });
+
+  it("ComplianceNotEnabledError used for disabled compliance operations", () => {
+    const err = new ComplianceNotEnabledError();
+    expect(err).to.be.instanceOf(Error);
+    expect(err).to.be.instanceOf(ComplianceNotEnabledError);
+    expect(err.message).to.include("SSS-2");
+  });
 });

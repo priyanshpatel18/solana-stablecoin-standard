@@ -84,4 +84,48 @@ describe("Presets and config", () => {
     expect(out.enable_transfer_hook).to.be.false;
     expect(out.default_account_frozen).to.be.false;
   });
+
+  it("invalid preset name falls back to SSS_1", () => {
+    const params = { ...baseParams, preset: "INVALID" as "SSS_1" };
+    const out = normalizeInitializeParams(params);
+    expect(out.enable_permanent_delegate).to.be.false;
+    expect(out.enable_transfer_hook).to.be.false;
+    expect(out.default_account_frozen).to.be.false;
+  });
+
+  it("normalizeInitializeParams accepts decimals 0", () => {
+    const params = { ...baseParams, decimals: 0 };
+    const out = normalizeInitializeParams(params);
+    expect(out.decimals).to.equal(0);
+  });
+
+  it("normalizeInitializeParams accepts decimals 18", () => {
+    const params = { ...baseParams, decimals: 18 };
+    const out = normalizeInitializeParams(params);
+    expect(out.decimals).to.equal(18);
+  });
+
+  it("normalizeInitializeParams passes through empty name symbol uri", () => {
+    const params = { ...baseParams, name: "", symbol: "", uri: "" };
+    const out = normalizeInitializeParams(params);
+    expect(out.name).to.equal("");
+    expect(out.symbol).to.equal("");
+    expect(out.uri).to.equal("");
+  });
+
+  it("preset SSS_2 overrides extensions when both set", () => {
+    const params: CreateStablecoinParams = {
+      ...baseParams,
+      preset: "SSS_2",
+      extensions: {
+        enablePermanentDelegate: false,
+        enableTransferHook: false,
+        defaultAccountFrozen: false,
+      },
+    };
+    const out = normalizeInitializeParams(params);
+    expect(out.enable_permanent_delegate).to.be.true;
+    expect(out.enable_transfer_hook).to.be.true;
+    expect(out.default_account_frozen).to.be.true;
+  });
 });

@@ -1,0 +1,207 @@
+{
+  "custom_metrics": {},
+  "master_seed": "addb82ea55b543847b31967e25e461fbe945a5b5809fef6847f6f9832f84114c",
+  "state_snapshots_hash": "",
+  "transactions": {
+    "CreateATA": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 19922,
+      "transaction_panicked": 0,
+      "transaction_successful": 19922,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "InitializeStablecoin": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 100000,
+      "transaction_panicked": 0,
+      "transaction_successful": 100000,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "MintAfterPause": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 19945,
+      "transaction_invoked": 19945,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {
+          "invalid account data for instruction": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: MintTokens",
+              "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb invoke [2]",
+              "Program log: Instruction: MintTo",
+              "Program log: Error: InvalidAccountData",
+              "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb consumed 882 of 1387528 compute units",
+              "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb failed: invalid account data for instruction",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 13354 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: invalid account data for instruction"
+            ],
+            "occurrences": 19945
+          }
+        }
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "MintOne": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 19922,
+      "transaction_panicked": 0,
+      "transaction_successful": 19922,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "MintOverflow": {
+      "custom_instruction_errors": {
+        "errors": {
+          "6012": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: MintTokens",
+              "Program log: AnchorError occurred. Error Code: MathOverflow. Error Number: 6012. Error Message: Arithmetic overflow.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 10508 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x177c"
+            ],
+            "occurrences": 19922
+          }
+        }
+      },
+      "transaction_failed": 19922,
+      "transaction_invoked": 19922,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Pause": {
+      "custom_instruction_errors": {
+        "errors": {
+          "6000": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: Pause",
+              "Program log: AnchorError thrown in programs/sss-1/src/instructions/pause.rs:28. Error Code: Unauthorized. Error Number: 6000. Error Message: Unauthorized: caller lacks required role.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 7782 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x1770"
+            ],
+            "occurrences": 19945
+          }
+        }
+      },
+      "transaction_failed": 19945,
+      "transaction_invoked": 60172,
+      "transaction_panicked": 0,
+      "transaction_successful": 40227,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Unpause": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 20269,
+      "transaction_panicked": 0,
+      "transaction_successful": 20269,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateMinter": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 39867,
+      "transaction_panicked": 0,
+      "transaction_successful": 39867,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateRoles": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 39867,
+      "transaction_panicked": 0,
+      "transaction_successful": 39867,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateRolesAttacker": {
+      "custom_instruction_errors": {
+        "errors": {
+          "1": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: UpdateRoles",
+              "Program 11111111111111111111111111111111 invoke [2]",
+              "Transfer: insufficient lamports 0, need 1433760",
+              "Program 11111111111111111111111111111111 failed: custom program error: 0x1",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 10532 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x1"
+            ],
+            "occurrences": 19906
+          }
+        }
+      },
+      "transaction_failed": 19906,
+      "transaction_invoked": 19906,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    }
+  }
+}

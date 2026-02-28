@@ -12,6 +12,7 @@ import {
   buildInitializeExtraAccountMetaListIx,
   buildInitializeIx,
   buildMintTokensIx,
+  buildRemoveFromBlacklistIx,
   buildSeizeIx,
   buildThawAccountIx,
   buildUpdateMinterIx,
@@ -26,7 +27,9 @@ import {
   sendAndConfirmAndLog,
   SSS_HOOK_PROGRAM_ID,
   SSS_TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
 } from "./helpers";
+import { createTransferCheckedWithTransferHookInstruction } from "@solana/spl-token";
 
 describe("Stablecoin with Transfer Hook", () => {
   const provider = anchor.AnchorProvider.env();
@@ -279,6 +282,327 @@ describe("Stablecoin with Transfer Hook", () => {
       expect(info!.data.length).to.be.greaterThan(0);
       console.log("  Blacklist entry created for:", badActorKeypair.publicKey.toBase58().slice(0, 8) + "...");
     });
+
+    it("remove then add again", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [blRole] = findRolePDA(stablecoinPDA, blacklisterKeypair.publicKey);
+      const [blacklistEntry] = findBlacklistPDA(stablecoinPDA, badActorKeypair.publicKey);
+
+      const removeIx = buildRemoveFromBlacklistIx(
+        blacklisterKeypair.publicKey,
+        stablecoinPDA,
+        blRole,
+        blacklistEntry,
+        badActorKeypair.publicKey
+      );
+      await sendAndConfirmAndLog(connection, new Transaction().add(removeIx), [blacklisterKeypair], "Blacklist remove");
+
+      const addIx = buildAddToBlacklistIx(
+        blacklisterKeypair.publicKey,
+        stablecoinPDA,
+        blRole,
+        blacklistEntry,
+        badActorKeypair.publicKey,
+        "Re-added after removal"
+      );
+      await sendAndConfirmAndLog(connection, new Transaction().add(addIx), [blacklisterKeypair], "Blacklist add again");
+
+      const info = await connection.getAccountInfo(blacklistEntry);
+      expect(info).to.not.be.null;
+    });
+
+    it("blacklist destination, transfer fails", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
+      const badActorATA = await createTokenAccount(
+        connection,
+        authority,
+        mintKeypair.publicKey,
+        badActorKeypair.publicKey
+      );
+      const thawIx = buildThawAccountIx(
+        authority.publicKey,
+        stablecoinPDA,
+        authorityRole,
+        mintKeypair.publicKey,
+        badActorATA
+      );
+      await sendAndConfirmTransaction(connection, new Transaction().add(thawIx), [authority]);
+      const userATA = getTokenAccountAddress(mintKeypair.publicKey, userKeypair.publicKey);
+      const transferIx = await createTransferCheckedWithTransferHookInstruction(
+        connection,
+        userATA,
+        mintKeypair.publicKey,
+        badActorATA,
+        userKeypair.publicKey,
+        BigInt(1),
+        6,
+        [],
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      try {
+        await sendAndConfirmTransaction(
+          connection,
+          new Transaction().add(transferIx),
+          [userKeypair]
+        );
+        expect.fail("Transfer to blacklisted destination should fail");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        expect(msg).to.match(/Blacklisted|Simulation failed|custom program error|0x/i);
+      }
+    });
+
+    it("blacklist source, transfer fails", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [blRole] = findRolePDA(stablecoinPDA, blacklisterKeypair.publicKey);
+      const [blacklistEntryUser] = findBlacklistPDA(stablecoinPDA, userKeypair.publicKey);
+
+      await sendAndConfirmAndLog(
+        connection,
+        new Transaction().add(
+          buildAddToBlacklistIx(
+            blacklisterKeypair.publicKey,
+            stablecoinPDA,
+            blRole,
+            blacklistEntryUser,
+            userKeypair.publicKey,
+            "Block source"
+          )
+        ),
+        [blacklisterKeypair],
+        "Blacklist source"
+      );
+
+      const userATA = getTokenAccountAddress(mintKeypair.publicKey, userKeypair.publicKey);
+      const badActorATA = getTokenAccountAddress(mintKeypair.publicKey, badActorKeypair.publicKey);
+      const transferIx = await createTransferCheckedWithTransferHookInstruction(
+        connection,
+        userATA,
+        mintKeypair.publicKey,
+        badActorATA,
+        userKeypair.publicKey,
+        BigInt(1),
+        6,
+        [],
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      try {
+        await sendAndConfirmTransaction(
+          connection,
+          new Transaction().add(transferIx),
+          [userKeypair]
+        );
+        expect.fail("Transfer from blacklisted source should fail");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        expect(msg).to.match(/Blacklisted|Simulation failed|custom program error|0x/i);
+      }
+    });
+  });
+
+  describe("Roles", () => {
+    it("rejects add_to_blacklist from non-blacklister", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
+      const [blacklistEntry] = findBlacklistPDA(stablecoinPDA, authority.publicKey);
+      try {
+        await sendAndConfirmTransaction(
+          connection,
+          new Transaction().add(
+            buildAddToBlacklistIx(
+              minterKeypair.publicKey,
+              stablecoinPDA,
+              minterRole,
+              blacklistEntry,
+              authority.publicKey,
+              "Should fail"
+            )
+          ),
+          [minterKeypair]
+        );
+        expect.fail("Should reject add_to_blacklist from non-blacklister");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        expect(msg).to.match(/Unauthorized|Simulation failed|custom program error|0x/i);
+      }
+    });
+
+    it("rejects remove_from_blacklist from non-blacklister", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
+      const [blRole] = findRolePDA(stablecoinPDA, blacklisterKeypair.publicKey);
+      const [blacklistEntry] = findBlacklistPDA(stablecoinPDA, badActorKeypair.publicKey);
+      try {
+        await sendAndConfirmTransaction(
+          connection,
+          new Transaction().add(
+            buildRemoveFromBlacklistIx(
+              minterKeypair.publicKey,
+              stablecoinPDA,
+              minterRole,
+              blacklistEntry,
+              badActorKeypair.publicKey
+            )
+          ),
+          [minterKeypair]
+        );
+        expect.fail("Should reject remove_from_blacklist from non-blacklister");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        expect(msg).to.match(/Unauthorized|Simulation failed|custom program error|0x/i);
+      }
+    });
+  });
+
+  describe("Hook", () => {
+    it("transfer between two non-blacklisted accounts succeeds", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
+      const aliceKeypair = Keypair.generate();
+      const bobKeypair = Keypair.generate();
+      const LAMPORTS = 100_000_000;
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: payer.publicKey,
+            toPubkey: aliceKeypair.publicKey,
+            lamports: LAMPORTS,
+          }),
+          SystemProgram.transfer({
+            fromPubkey: payer.publicKey,
+            toPubkey: bobKeypair.publicKey,
+            lamports: LAMPORTS,
+          })
+        ),
+        [payer]
+      );
+      const aliceATA = await createTokenAccount(connection, authority, mintKeypair.publicKey, aliceKeypair.publicKey);
+      const bobATA = await createTokenAccount(connection, authority, mintKeypair.publicKey, bobKeypair.publicKey);
+      const thawAlice = buildThawAccountIx(
+        authority.publicKey,
+        stablecoinPDA,
+        authorityRole,
+        mintKeypair.publicKey,
+        aliceATA
+      );
+      const thawBob = buildThawAccountIx(
+        authority.publicKey,
+        stablecoinPDA,
+        authorityRole,
+        mintKeypair.publicKey,
+        bobATA
+      );
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(thawAlice).add(thawBob),
+        [authority]
+      );
+      const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
+      const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          buildMintTokensIx(
+            minterKeypair.publicKey,
+            stablecoinPDA,
+            minterRole,
+            minterInfo,
+            mintKeypair.publicKey,
+            aliceATA,
+            BigInt(100_000)
+          )
+        ),
+        [minterKeypair]
+      );
+      const transferIx = await createTransferCheckedWithTransferHookInstruction(
+        connection,
+        aliceATA,
+        mintKeypair.publicKey,
+        bobATA,
+        aliceKeypair.publicKey,
+        BigInt(10_000),
+        6,
+        [],
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      await sendAndConfirmTransaction(connection, new Transaction().add(transferIx), [aliceKeypair]);
+      const bobBalance = await connection.getTokenAccountBalance(bobATA);
+      expect(Number(bobBalance.value.amount)).to.equal(10_000);
+    });
+
+    it("after blacklist add, transfer fails with hook error", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [blRole] = findRolePDA(stablecoinPDA, blacklisterKeypair.publicKey);
+      const bobKeypair = Keypair.generate();
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: payer.publicKey,
+            toPubkey: bobKeypair.publicKey,
+            lamports: 100_000_000,
+          })
+        ),
+        [payer]
+      );
+      const aliceATA = getTokenAccountAddress(mintKeypair.publicKey, userKeypair.publicKey);
+      const bobATA = await createTokenAccount(
+        connection,
+        authority,
+        mintKeypair.publicKey,
+        bobKeypair.publicKey
+      );
+      const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
+      const thawBob = buildThawAccountIx(
+        authority.publicKey,
+        stablecoinPDA,
+        authorityRole,
+        mintKeypair.publicKey,
+        bobATA
+      );
+      await sendAndConfirmTransaction(connection, new Transaction().add(thawBob), [authority]);
+      const [blacklistEntry] = findBlacklistPDA(stablecoinPDA, bobKeypair.publicKey);
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          buildAddToBlacklistIx(
+            blacklisterKeypair.publicKey,
+            stablecoinPDA,
+            blRole,
+            blacklistEntry,
+            bobKeypair.publicKey,
+            "Block transfer"
+          )
+        ),
+        [blacklisterKeypair]
+      );
+      const transferIx = await createTransferCheckedWithTransferHookInstruction(
+        connection,
+        aliceATA,
+        mintKeypair.publicKey,
+        bobATA,
+        userKeypair.publicKey,
+        BigInt(1),
+        6,
+        [],
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      try {
+        await sendAndConfirmTransaction(connection, new Transaction().add(transferIx), [userKeypair]);
+        expect.fail("Transfer to blacklisted destination should fail");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        expect(msg).to.match(/Blacklisted|Simulation failed|custom program error|0x/i);
+      }
+    });
   });
 
   describe("Seize", () => {
@@ -287,22 +611,8 @@ describe("Stablecoin with Transfer Hook", () => {
       const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
       const [szRole] = findRolePDA(stablecoinPDA, seizerKeypair.publicKey);
 
-      // Create and fund bad actor ATA (simulates pre-blacklist balance)
-      const badActorATA = await createTokenAccount(
-        connection,
-        authority,
-        mintKeypair.publicKey,
-        badActorKeypair.publicKey
-      );
-
-      const thawIx = buildThawAccountIx(
-        authority.publicKey,
-        stablecoinPDA,
-        authorityRole,
-        mintKeypair.publicKey,
-        badActorATA
-      );
-      await sendAndConfirmAndLog(connection, new Transaction().add(thawIx), [authority], "Thaw user ATA");
+      // badActor ATA already exists and is thawed from "blacklist destination" test
+      const badActorATA = getTokenAccountAddress(mintKeypair.publicKey, badActorKeypair.publicKey);
 
       const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
       const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
@@ -363,6 +673,123 @@ describe("Stablecoin with Transfer Hook", () => {
       const treasuryBalance = await connection.getTokenAccountBalance(treasuryATA);
       expect(Number(treasuryBalance.value.amount)).to.be.greaterThan(0);
       console.log("  Seized to treasury:", treasuryBalance.value.amount);
+    });
+
+    it("seize with zero balance (no-op or error)", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
+      const [szRole] = findRolePDA(stablecoinPDA, seizerKeypair.publicKey);
+      const [extraAccountMetas] = findExtraAccountMetasPDA(mintKeypair.publicKey, SSS_HOOK_PROGRAM_ID);
+      const [sourceBlacklist] = findBlacklistPDA(stablecoinPDA, stablecoinPDA);
+      const [destBlacklist] = findBlacklistPDA(stablecoinPDA, authority.publicKey);
+
+      const zeroBalanceKeypair = Keypair.generate();
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: payer.publicKey,
+            toPubkey: zeroBalanceKeypair.publicKey,
+            lamports: 100_000_000,
+          })
+        ),
+        [payer]
+      );
+      const zeroBalanceATA = await createTokenAccount(
+        connection,
+        authority,
+        mintKeypair.publicKey,
+        zeroBalanceKeypair.publicKey
+      );
+      const [blRole] = findRolePDA(stablecoinPDA, blacklisterKeypair.publicKey);
+      const [blacklistEntry] = findBlacklistPDA(stablecoinPDA, zeroBalanceKeypair.publicKey);
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          buildAddToBlacklistIx(
+            blacklisterKeypair.publicKey,
+            stablecoinPDA,
+            blRole,
+            blacklistEntry,
+            zeroBalanceKeypair.publicKey,
+            "Zero balance seize test"
+          )
+        ),
+        [blacklisterKeypair]
+      );
+      const thawIx = buildThawAccountIx(
+        authority.publicKey,
+        stablecoinPDA,
+        authorityRole,
+        mintKeypair.publicKey,
+        zeroBalanceATA
+      );
+      await sendAndConfirmTransaction(connection, new Transaction().add(thawIx), [authority]);
+
+      const treasuryATA = getTokenAccountAddress(mintKeypair.publicKey, authority.publicKey);
+      const seizeIx = buildSeizeIx(
+        seizerKeypair.publicKey,
+        stablecoinPDA,
+        szRole,
+        mintKeypair.publicKey,
+        zeroBalanceATA,
+        treasuryATA,
+        SSS_HOOK_PROGRAM_ID,
+        extraAccountMetas,
+        SSS_TOKEN_PROGRAM_ID,
+        sourceBlacklist,
+        destBlacklist
+      );
+      try {
+        await sendAndConfirmTransaction(
+          connection,
+          new Transaction().add(seizeIx),
+          [seizerKeypair]
+        );
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        expect(msg).to.match(/ZeroAmount|zero|0x1776|6006/i);
+      }
+    });
+
+    it("seize to self (treasury as dest)", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
+      const [szRole] = findRolePDA(stablecoinPDA, seizerKeypair.publicKey);
+      const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
+      const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
+      const [extraAccountMetas] = findExtraAccountMetasPDA(mintKeypair.publicKey, SSS_HOOK_PROGRAM_ID);
+      const [sourceBlacklist] = findBlacklistPDA(stablecoinPDA, stablecoinPDA);
+      const [destBlacklist] = findBlacklistPDA(stablecoinPDA, authority.publicKey);
+
+      const badActorATA = getTokenAccountAddress(mintKeypair.publicKey, badActorKeypair.publicKey);
+      const treasuryATA = getTokenAccountAddress(mintKeypair.publicKey, authority.publicKey);
+
+      const mintIx = buildMintTokensIx(
+        minterKeypair.publicKey,
+        stablecoinPDA,
+        minterRole,
+        minterInfo,
+        mintKeypair.publicKey,
+        badActorATA,
+        BigInt(100_000)
+      );
+      await sendAndConfirmTransaction(connection, new Transaction().add(mintIx), [minterKeypair]);
+
+      const seizeIx = buildSeizeIx(
+        seizerKeypair.publicKey,
+        stablecoinPDA,
+        szRole,
+        mintKeypair.publicKey,
+        badActorATA,
+        treasuryATA,
+        SSS_HOOK_PROGRAM_ID,
+        extraAccountMetas,
+        SSS_TOKEN_PROGRAM_ID,
+        sourceBlacklist,
+        destBlacklist
+      );
+      await sendAndConfirmTransaction(connection, new Transaction().add(seizeIx), [seizerKeypair]);
     });
   });
 

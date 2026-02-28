@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 /// Seeds: [b"minter", stablecoin.key().as_ref(), minter.key().as_ref()]
 #[account]
+#[derive(InitSpace)]
 pub struct MinterInfo {
     pub stablecoin: Pubkey,
     pub minter: Pubkey,
@@ -13,10 +14,15 @@ pub struct MinterInfo {
 }
 
 impl MinterInfo {
-    pub const LEN: usize = 8   // discriminator
-        + 32                    // stablecoin
-        + 32                    // minter
-        + 8                     // quota
-        + 8                     // minted_amount
-        + 1; // bump
+    pub const LEN: usize = 8usize
+        .checked_add(32)
+        .unwrap()
+        .checked_add(32)
+        .unwrap()
+        .checked_add(8)
+        .unwrap()
+        .checked_add(8)
+        .unwrap()
+        .checked_add(1)
+        .unwrap();
 }
