@@ -83,11 +83,17 @@ From `@stbr/sss-token`:
 - `findBlacklistPDA(stablecoin, address [, programId])`
 - `findExtraAccountMetasPDA(mint, hookProgramId)`
 
-## Errors
+## Errors and Validation
 
 - `ComplianceNotEnabledError` — Compliance used on non-SSS-2.
-- `StablecoinErrorCode` — Program error codes (e.g. Unauthorized 6000, Paused 6001, ComplianceNotEnabled 6002).
+- `StablecoinErrorCode` — Program error codes (e.g. Unauthorized 6000, Paused 6001, ZeroAmount 6006, QuotaExceeded 6005, SupplyCapExceeded 6014).
 - `parseAnchorErrorCode(logs)` — Extract program error code from tx logs.
+- `parseProgramError(logs)` — Parse logs and return human-readable message for known program errors.
+- `parseProgramErrorFromError(err)` — Extract program error from an Error (Anchor embeds logs).
+- `getUserFacingMessage(code)` — Map program error code to friendly message.
+- `getErrorMessage(err)` — Get user-facing message from any Error (prefers program error mapping).
+- `validateMintAmount(amount)` — Returns error string if amount ≤ 0; null if valid (matches tests).
+- `validateBurnAmount(amount)` — Returns error string if amount ≤ 0; null if valid (matches tests).
 
 ## Types
 

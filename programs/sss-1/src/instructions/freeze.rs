@@ -21,6 +21,8 @@ pub struct FreezeTokenAccount<'info> {
     #[account(
         seeds = [ROLE_SEED, stablecoin.key().as_ref(), authority.key().as_ref()],
         bump,
+        constraint = role.stablecoin == stablecoin.key(),
+        constraint = role.holder == authority.key(),
     )]
     pub role: Account<'info, RoleAccount>,
 
@@ -49,6 +51,8 @@ pub struct ThawTokenAccount<'info> {
     #[account(
         seeds = [ROLE_SEED, stablecoin.key().as_ref(), authority.key().as_ref()],
         bump,
+        constraint = role.stablecoin == stablecoin.key(),
+        constraint = role.holder == authority.key(),
     )]
     pub role: Account<'info, RoleAccount>,
 

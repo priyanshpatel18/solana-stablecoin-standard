@@ -16,6 +16,9 @@ import {
   findRolePDA,
   SSS_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
+  validateMintAmount,
+  validateBurnAmount,
+  getErrorMessage,
   type CreateStablecoinParams,
 } from "@stbr/sss-token";
 
@@ -139,6 +142,11 @@ program
   .description("Mint tokens to recipient")
   .action(async (...args: unknown[]) => {
     const [recipient, amount] = args as [string, string];
+    const err = validateMintAmount(amount ?? "0");
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
     const globalOpts = getGlobalOpts();
     const connection = getConnection(globalOpts.rpcUrl);
     const keypair = getKeypair(globalOpts.keypair);
@@ -147,15 +155,20 @@ program
       console.error("--mint required");
       process.exit(1);
     }
-    const mint = new PublicKey(mintAddr);
-    const prog = loadProgram(connection, keypair);
-    const stable = await SolanaStablecoin.load(prog as never, mint);
-    const sig = await stable.mint(keypair.publicKey, {
-      recipient: new PublicKey(recipient),
-      amount: BigInt(amount),
-      minter: keypair.publicKey,
-    });
-    logTx(sig, "Mint tx", globalOpts.rpcUrl);
+    try {
+      const mint = new PublicKey(mintAddr);
+      const prog = loadProgram(connection, keypair);
+      const stable = await SolanaStablecoin.load(prog as never, mint);
+      const sig = await stable.mint(keypair.publicKey, {
+        recipient: new PublicKey(recipient),
+        amount: BigInt(amount),
+        minter: keypair.publicKey,
+      });
+      logTx(sig, "Mint tx", globalOpts.rpcUrl);
+    } catch (e) {
+      console.error(getErrorMessage(e));
+      process.exit(1);
+    }
   });
 
 program
@@ -163,6 +176,11 @@ program
   .description("Burn tokens from signer")
   .action(async (...args: unknown[]) => {
     const [amount] = args as [string];
+    const err = validateBurnAmount(amount ?? "0");
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
     const globalOpts = getGlobalOpts();
     const connection = getConnection(globalOpts.rpcUrl);
     const keypair = getKeypair(globalOpts.keypair);
@@ -171,11 +189,16 @@ program
       console.error("--mint required");
       process.exit(1);
     }
-    const mint = new PublicKey(mintAddr);
-    const prog = loadProgram(connection, keypair);
-    const stable = await SolanaStablecoin.load(prog as never, mint);
-    const sig = await stable.burn(keypair.publicKey, { amount: BigInt(amount) });
-    logTx(sig, "Burn tx", globalOpts.rpcUrl);
+    try {
+      const mint = new PublicKey(mintAddr);
+      const prog = loadProgram(connection, keypair);
+      const stable = await SolanaStablecoin.load(prog as never, mint);
+      const sig = await stable.burn(keypair.publicKey, { amount: BigInt(amount) });
+      logTx(sig, "Burn tx", globalOpts.rpcUrl);
+    } catch (e) {
+      console.error(getErrorMessage(e));
+      process.exit(1);
+    }
   });
 
 program

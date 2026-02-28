@@ -110,7 +110,7 @@ impl<'info> MintTokens<'info> {
                     .try_into()
                     .map_err(|_| StablecoinError::MathOverflow)?,
             );
-            if cap != u64::MAX && new_total_minted > cap {
+            if cap != NO_SUPPLY_CAP && new_total_minted > cap {
                 return Err(StablecoinError::SupplyCapExceeded.into());
             }
         }

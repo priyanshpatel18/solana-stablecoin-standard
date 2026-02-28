@@ -2,14 +2,19 @@ import { z } from "zod";
 
 const amountSchema = z.union([z.number(), z.string()]);
 
+/** Amount > 0 (matches program: zero mint/burn rejected). */
+const amountPositiveSchema = amountSchema
+  .transform((v) => (typeof v === "string" ? BigInt(v) : BigInt(v)))
+  .refine((n) => n > 0n, { message: "Amount must be greater than zero" });
+
 export const mintBodySchema = z.object({
   recipient: z.string(),
-  amount: amountSchema,
+  amount: amountPositiveSchema,
   minter: z.string().optional(),
 });
 
 export const burnBodySchema = z.object({
-  amount: amountSchema,
+  amount: amountPositiveSchema,
   burner: z.string().optional(),
 });
 

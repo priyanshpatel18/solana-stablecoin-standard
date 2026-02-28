@@ -12,6 +12,20 @@ Layer 1 — Base SDK:    Token creation, mint/freeze authority, metadata, role P
 - **Layer 2 (Compliance):** SSS-2-only: transfer hook (extra-account-metas), blacklist add/remove, seize via permanent delegate. Gated by `enable_transfer_hook` and `enable_permanent_delegate`; instructions fail with a clear error if compliance was not enabled at init.
 - **Layer 3 (Presets):** Config objects `Presets.SSS_1` and `Presets.SSS_2`; custom config via `extensions: { permanentDelegate, transferHook, defaultAccountFrozen }`.
 
+### SSS-1 vs SSS-2 Feature Matrix
+
+| Feature | SSS-1 | SSS-2 |
+|---------|-------|-------|
+| Initialize, mint, burn, freeze, thaw | ✓ | ✓ |
+| Pause / unpause | ✓ | ✓ |
+| Supply cap, minter quota, update roles | ✓ | ✓ |
+| Transfer hook (block transfers) | — | ✓ |
+| Blacklist (add/remove) | — | ✓ |
+| Seize (permanent delegate) | — | ✓ |
+| DefaultAccountFrozen at init | optional | required for seize flow |
+
+SSS-2 compliance features are gated by `enable_transfer_hook` and `enable_permanent_delegate`. Calls to blacklist or seize instructions fail with a clear error if compliance was not enabled.
+
 ## Data Flow
 
 ### Initialize

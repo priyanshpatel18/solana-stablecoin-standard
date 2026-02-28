@@ -22,6 +22,10 @@ pub const MIN_SUPPLY_CAP_DATA_LEN: usize = SUPPLY_CAP_VALUE_OFFSET
     .checked_add(SUPPLY_CAP_VALUE_SIZE)
     .unwrap();
 
+/// Supply cap sentinel values (update_supply_cap)
+pub const NO_SUPPLY_CAP_INDICATOR: u64 = 0;
+pub const NO_SUPPLY_CAP: u64 = u64::MAX;
+
 /// Validation limits
 pub const MAX_NAME_LEN: usize = 32;
 pub const MAX_SYMBOL_LEN: usize = 10;

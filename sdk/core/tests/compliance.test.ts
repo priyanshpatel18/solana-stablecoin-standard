@@ -43,6 +43,7 @@ describe("Compliance gating and errors", () => {
     expect(StablecoinErrorCode.Blacklisted).to.equal(6011);
     expect(StablecoinErrorCode.MathOverflow).to.equal(6012);
     expect(StablecoinErrorCode.InvalidRoleConfig).to.equal(6013);
+    expect(StablecoinErrorCode.SupplyCapExceeded).to.equal(6014);
   });
 
   it("parseAnchorErrorCode returns first match when multiple codes in logs", () => {

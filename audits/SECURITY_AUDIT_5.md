@@ -152,4 +152,4 @@ Document the design decision: blacklist enforcement for recipients is delegated 
 
 ---
 
-*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz/*
+*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz/

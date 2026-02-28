@@ -75,6 +75,37 @@ export interface BlacklistResponse {
   entries: BlacklistEntry[];
 }
 
+export interface AuditEntry {
+  timestamp: string;
+  type: string;
+  signature?: string;
+  programId?: string;
+  mint?: string;
+  address?: string;
+  targetAddress?: string;
+  amount?: string;
+  reason?: string;
+  actor?: string;
+  logs?: string[];
+  err?: unknown;
+}
+
+export interface AuditLogResponse {
+  entries: AuditEntry[];
+}
+
+export async function getAuditLog(mint?: string, limit = 50): Promise<AuditLogResponse> {
+  const params = new URLSearchParams({ format: "json" });
+  if (mint) params.set("mint", mint);
+  const data = await request<AuditLogResponse>(
+    `/compliance/audit-log?${params.toString()}`
+  );
+  if (data.entries && limit > 0) {
+    data.entries = data.entries.slice(0, limit);
+  }
+  return data;
+}
+
 export function getBackendUrl(): string {
   return BACKEND_URL;
 }

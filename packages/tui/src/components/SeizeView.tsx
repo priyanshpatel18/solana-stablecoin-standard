@@ -2,14 +2,16 @@ import React, { useState } from "react";
 import { Box, Text } from "ink";
 import TextInput from "ink-text-input";
 import { seize } from "../api.js";
+import * as sdkOps from "../sdkOperations.js";
 
 type Props = {
   mint: string;
+  mode: "backend" | "standalone";
   onSuccess: (sig: string) => void;
   onError: (msg: string) => void;
 };
 
-export default function SeizeView({ mint, onSuccess, onError }: Props) {
+export default function SeizeView({ mint, mode, onSuccess, onError }: Props) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
@@ -20,12 +22,10 @@ export default function SeizeView({ mint, onSuccess, onError }: Props) {
     if (!from.trim() || !to.trim() || !amount.trim()) return;
     setSubmitting(true);
     try {
-      const res = await seize({
-        mint,
-        from: from.trim(),
-        to: to.trim(),
-        amount: amount.trim(),
-      });
+      const res =
+        mode === "backend"
+          ? await seize({ mint, from: from.trim(), to: to.trim(), amount: amount.trim() })
+          : await sdkOps.seize(mint, from.trim(), to.trim(), amount.trim());
       onSuccess(res.signature);
       setFrom("");
       setTo("");

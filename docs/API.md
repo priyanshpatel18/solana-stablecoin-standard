@@ -136,8 +136,14 @@ Audit trail format and regulatory notes: see [COMPLIANCE.md](COMPLIANCE.md).
 
 ## Admin TUI
 
-The repo includes an optional Admin TUI (`packages/tui`) that talks to this backend. It provides interactive screens for status, mint, burn, freeze/thaw, pause, blacklist, and seize.
+The repo includes an optional Admin TUI (`packages/tui`) that supports two modes:
 
-**Run:** From repo root, `pnpm run tui` (or `pnpm -C packages/tui run start` after `pnpm run build` in `packages/tui`). Set `BACKEND_URL` to the backend base URL (e.g. `http://localhost:3000`). If the backend has `API_KEY` set, set `API_KEY` in the TUI environment as well. Optionally set `MINT_ADDRESS` so the TUI uses that mint by default; otherwise the backend may return a default mint from `GET /health`, or you can enter the mint in the Status tab.
+- **Backend mode:** `BACKEND_URL` set — uses the backend API (keys on server, compliance, audit log).
+- **Standalone mode:** `BACKEND_URL` unset — uses SDK/RPC directly (local keypair at `KEYPAIR_PATH`, no backend).
 
-**Usage:** Tab/arrow keys switch views; Enter submits forms. The TUI uses the same endpoints as this API reference.
+**Run:** From repo root, `pnpm run tui` (or `pnpm -C packages/tui run start` after `pnpm run build` in `packages/tui`).
+
+- **Backend mode:** Set `BACKEND_URL` to the backend base URL (e.g. `http://localhost:3000`). If the backend has `API_KEY` set, set `API_KEY` in the TUI environment as well.
+- **Standalone mode:** Set `RPC_URL` (default devnet) and `KEYPAIR_PATH` (default `~/.config/solana/id.json`). Mint, burn, freeze/thaw, pause, roles, blacklist, and seize use the local keypair. Audit log and blacklist list require backend.
+
+**Usage:** Tab/arrow keys switch views; Enter submits forms.

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import {
@@ -7,23 +7,26 @@ import {
   blacklistRemove,
   type BlacklistEntry,
 } from "../api.js";
+import * as sdkOps from "../sdkOperations.js";
+import { getErrorMessage } from "@stbr/sss-token";
 
 type Props = {
   mint: string;
+  mode: "backend" | "standalone";
   onSuccess: (sig: string) => void;
   onError: (msg: string) => void;
 };
 
-export default function BlacklistView({ mint, onSuccess, onError }: Props) {
+export default function BlacklistView({ mint, mode, onSuccess, onError }: Props) {
   const [entries, setEntries] = useState<BlacklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<"list" | "add" | "remove">("list");
+  const [viewMode, setViewMode] = useState<"list" | "add" | "remove">("list");
   const [addAddress, setAddAddress] = useState("");
   const [removeAddress, setRemoveAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!mint) {
+    if (!mint || mode !== "backend") {
       setLoading(false);
       return;
     }
@@ -31,107 +34,189 @@ export default function BlacklistView({ mint, onSuccess, onError }: Props) {
       .then((r) => setEntries(r.entries))
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, [mint]);
+  }, [mint, mode]);
 
-  const refresh = () => {
-    if (!mint) return;
+  const refresh = useCallback(() => {
+    if (!mint || mode !== "backend") return;
     getBlacklist(mint).then((r) => setEntries(r.entries));
-  };
+  }, [mint, mode]);
 
-  useInput((input, key) => {
-    if (key.escape) {
-      setMode("list");
-      setAddAddress("");
-      setRemoveAddress("");
-      return;
-    }
-    if (mode === "list" && !submitting) {
-      if (input.toLowerCase() === "a") setMode("add");
-      else if (input.toLowerCase() === "r") setMode("remove");
-    }
-  });
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        setViewMode("list");
+        setAddAddress("");
+        setRemoveAddress("");
+        return;
+      }
+      if (viewMode === "list" && !submitting) {
+        if (input === "1") setViewMode("add");
+        else if (input === "2") setViewMode("remove");
+      }
+    },
+    { isActive: !submitting }
+  );
 
-  const handleAdd = async () => {
+  const handleAdd = useCallback(async () => {
     if (!addAddress.trim()) return;
     setSubmitting(true);
     try {
-      const res = await blacklistAdd(mint, addAddress.trim());
+      const res =
+        mode === "backend"
+          ? await blacklistAdd(mint, addAddress.trim())
+          : await sdkOps.blacklistAdd(mint, addAddress.trim());
       onSuccess(res.signature);
       setAddAddress("");
-      setMode("list");
+      setViewMode("list");
       refresh();
     } catch (e) {
-      onError(e instanceof Error ? e.message : String(e));
+      onError(getErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [mint, mode, addAddress, onSuccess, onError, refresh]);
 
-  const handleRemove = async () => {
+  const handleRemove = useCallback(async () => {
     if (!removeAddress.trim()) return;
     setSubmitting(true);
     try {
-      const res = await blacklistRemove(mint, removeAddress.trim());
+      const res =
+        mode === "backend"
+          ? await blacklistRemove(mint, removeAddress.trim())
+          : await sdkOps.blacklistRemove(mint, removeAddress.trim());
       onSuccess(res.signature);
       setRemoveAddress("");
-      setMode("list");
+      setViewMode("list");
       refresh();
     } catch (e) {
-      onError(e instanceof Error ? e.message : String(e));
+      onError(getErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [mint, mode, removeAddress, onSuccess, onError, refresh]);
 
   if (!mint) {
-    return <Text color="yellow">Set mint in Status tab first.</Text>;
-  }
-
-  if (loading) {
-    return <Text>Loading blacklist...</Text>;
-  }
-
-  if (mode === "add") {
-    if (submitting) return <Text>Adding...</Text>;
     return (
-      <Box flexDirection="column">
-        <Text>Address to add (Enter to submit, Esc to cancel):</Text>
-        <TextInput
-          value={addAddress}
-          onChange={setAddAddress}
-          onSubmit={() => (addAddress.trim() ? handleAdd() : setMode("list"))}
-          placeholder="pubkey"
-        />
+      <Box flexDirection="column" paddingY={1}>
+        <Text color="yellow">Set mint in Status tab first (or press Shift+M to change).</Text>
       </Box>
     );
   }
 
-  if (mode === "remove") {
-    if (submitting) return <Text>Removing...</Text>;
+  if (loading) {
+    return (
+      <Box flexDirection="column" paddingY={1}>
+        <Text color="cyan">Loading blacklist...</Text>
+      </Box>
+    );
+  }
+
+  if (viewMode === "add") {
+    if (submitting) {
+      return (
+        <Box flexDirection="column" paddingY={1}>
+          <Text color="cyan">Adding to blacklist...</Text>
+        </Box>
+      );
+    }
     return (
       <Box flexDirection="column">
-        <Text>Address to remove:</Text>
-        <TextInput
-          value={removeAddress}
-          onChange={setRemoveAddress}
-          onSubmit={() => (removeAddress.trim() ? handleRemove() : setMode("list"))}
-          placeholder="pubkey"
-        />
+        <Text bold color="cyan">Add to Blacklist</Text>
+        <Text dimColor>Address to blacklist</Text>
+        <Box marginTop={1}>
+          <TextInput
+            value={addAddress}
+            onChange={setAddAddress}
+            onSubmit={() => (addAddress.trim() ? handleAdd() : setViewMode("list"))}
+            placeholder="pubkey..."
+          />
+        </Box>
+        <Box marginTop={1}>
+          <Text dimColor>Enter to submit • Esc to cancel</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (viewMode === "remove") {
+    if (submitting) {
+      return (
+        <Box flexDirection="column" paddingY={1}>
+          <Text color="cyan">Removing from blacklist...</Text>
+        </Box>
+      );
+    }
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyan">Remove from Blacklist</Text>
+        <Text dimColor>Address to remove</Text>
+        <Box marginTop={1}>
+          <TextInput
+            value={removeAddress}
+            onChange={setRemoveAddress}
+            onSubmit={() => (removeAddress.trim() ? handleRemove() : setViewMode("list"))}
+            placeholder="pubkey..."
+          />
+        </Box>
+        <Box marginTop={1}>
+          <Text dimColor>Enter to submit • Esc to cancel</Text>
+        </Box>
       </Box>
     );
   }
 
   return (
     <Box flexDirection="column">
-      <Text bold>Blacklist ({entries.length})</Text>
-      {entries.length === 0 && <Text dimColor>No entries.</Text>}
-      {entries.slice(0, 10).map((e) => (
-        <Text key={e.address}>
-          {e.address.slice(0, 8)}... {e.reason ?? ""}
-        </Text>
+      <Box marginBottom={1}>
+        <Text bold color="cyan">Blacklist</Text>
+        <Text color="gray"> ─ </Text>
+        {mode === "backend" ? (
+          <Text color="white">{entries.length} entries</Text>
+        ) : (
+          <Text dimColor>Add/remove only (list requires backend)</Text>
+        )}
+      </Box>
+
+      <Box flexDirection="row">
+        <Box
+          borderStyle="round"
+          borderColor="cyan"
+          paddingX={2}
+          paddingY={1}
+          marginRight={2}
+        >
+          <Text color="white">[ 1 ] Add</Text>
+        </Box>
+        <Box
+          borderStyle="round"
+          borderColor="cyan"
+          paddingX={2}
+          paddingY={1}
+        >
+          <Text color="white">[ 2 ] Remove</Text>
+        </Box>
+      </Box>
+
+      {mode === "backend" && entries.length === 0 && (
+        <Box marginTop={1}>
+          <Text dimColor>No entries.</Text>
+        </Box>
+      )}
+      {mode === "backend" && entries.slice(0, 10).map((e) => (
+        <Box key={e.address} marginTop={0}>
+          <Text color="white">{e.address.slice(0, 8)}...</Text>
+          <Text color="gray"> {e.reason ?? ""}</Text>
+        </Box>
       ))}
-      {entries.length > 10 && <Text dimColor>... and {entries.length - 10} more</Text>}
-      <Text dimColor>Press A to add, R to remove (or use Enter on list to switch)</Text>
+      {mode === "backend" && entries.length > 10 && (
+        <Box marginTop={1}>
+          <Text dimColor>... and {entries.length - 10} more</Text>
+        </Box>
+      )}
+
+      <Box marginTop={1}>
+        <Text dimColor>Press 1 to add, 2 to remove • Esc to cancel</Text>
+      </Box>
     </Box>
   );
 }

@@ -30,10 +30,14 @@ pub struct UpdateSupplyCap<'info> {
 
 impl<'info> UpdateSupplyCap<'info> {
     pub fn update_supply_cap(&mut self, cap: u64) -> Result<()> {
-        // cap == 0 means "remove cap" — set to u64::MAX (effectively no limit)
-        let effective_cap = if cap == 0 { u64::MAX } else { cap };
+        // cap == NO_SUPPLY_CAP_INDICATOR means "remove cap" — set to NO_SUPPLY_CAP (effectively no limit)
+        let effective_cap = if cap == NO_SUPPLY_CAP_INDICATOR {
+            NO_SUPPLY_CAP
+        } else {
+            cap
+        };
 
-        if effective_cap != u64::MAX {
+        if effective_cap != NO_SUPPLY_CAP {
             require!(
                 effective_cap >= self.stablecoin.total_minted,
                 crate::error::StablecoinError::SupplyCapExceeded

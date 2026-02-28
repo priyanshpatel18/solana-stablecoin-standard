@@ -24,7 +24,7 @@ import {
   seizeBodySchema,
   rolesBodySchema,
 } from "./schemas";
-import { TOKEN_2022_PROGRAM_ID } from "@stbr/sss-token";
+import { TOKEN_2022_PROGRAM_ID, getErrorMessage } from "@stbr/sss-token";
 
 const app = express();
 const RPC_URL = process.env.RPC_URL || "https://api.devnet.solana.com";
@@ -146,8 +146,7 @@ protectedRouter.post("/mint-request", async (req, res) => {
     });
     res.json({ success: true, signature: sig });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: getErrorMessage(e) });
   }
 });
 
@@ -182,8 +181,7 @@ protectedRouter.post("/burn-request", async (req, res) => {
     });
     res.json({ success: true, signature: sig });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: getErrorMessage(e) });
   }
 });
 
