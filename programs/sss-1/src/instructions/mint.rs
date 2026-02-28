@@ -98,26 +98,33 @@ impl<'info> MintTokens<'info> {
             .checked_add(amount)
             .ok_or(StablecoinError::MathOverflow)?;
 
-        // Enforce supply cap if configured (supply_cap != program_id means cap is set)
+        // Enforce supply cap if configured. If supply_cap != program_id, it MUST be the correct
+        // SupplyCap PDA — otherwise fail with Unauthorized to prevent bypass via arbitrary account.
         if self.supply_cap.key() != crate::ID {
             let (expected_pda, _) =
                 Pubkey::find_program_address(&[SUPPLY_CAP_SEED, stablecoin_key.as_ref()], &crate::ID);
-            if self.supply_cap.key() == expected_pda {
-                require_eq!(
-                    self.supply_cap.owner,
-                    &crate::ID,
-                    StablecoinError::Unauthorized
-                );
-                let cap_data = self.supply_cap.try_borrow_data()?;
-                require!(cap_data.len() >= 16, StablecoinError::MathOverflow);
-                let cap = u64::from_le_bytes(
-                    cap_data[8..16]
-                        .try_into()
-                        .map_err(|_| StablecoinError::MathOverflow)?,
-                );
-                if cap != u64::MAX && stablecoin.total_minted > cap {
-                    return Err(StablecoinError::SupplyCapExceeded.into());
-                }
+            require_eq!(
+                self.supply_cap.key(),
+                expected_pda,
+                StablecoinError::Unauthorized
+            );
+            require_eq!(
+                self.supply_cap.owner,
+                &crate::ID,
+                StablecoinError::Unauthorized
+            );
+            let cap_data = self.supply_cap.try_borrow_data()?;
+            require!(
+                cap_data.len() >= MIN_SUPPLY_CAP_DATA_LEN,
+                StablecoinError::MathOverflow
+            );
+            let cap = u64::from_le_bytes(
+                cap_data[SUPPLY_CAP_VALUE_OFFSET..SUPPLY_CAP_VALUE_OFFSET + SUPPLY_CAP_VALUE_SIZE]
+                    .try_into()
+                    .map_err(|_| StablecoinError::MathOverflow)?,
+            );
+            if cap != u64::MAX && stablecoin.total_minted > cap {
+                return Err(StablecoinError::SupplyCapExceeded.into());
             }
         }
 

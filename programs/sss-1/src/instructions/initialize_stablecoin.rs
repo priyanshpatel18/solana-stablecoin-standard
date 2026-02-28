@@ -76,7 +76,16 @@ impl<'info> InitializeStablecoin<'info> {
         );
         require!(params.uri.len() <= MAX_URI_LEN, StablecoinError::UriTooLong);
 
-        // 2. Determine Token-2022 extensions
+        // 2. Validate transfer hook program when enable_transfer_hook is true
+        if params.enable_transfer_hook {
+            require_eq!(
+                self.transfer_hook_program.key(),
+                SSS_TRANSFER_HOOK_PROGRAM_ID,
+                StablecoinError::Unauthorized
+            );
+        }
+
+        // 3. Determine Token-2022 extensions
         let mut extension_types = vec![ExtensionType::MintCloseAuthority];
 
         if params.enable_permanent_delegate {
@@ -89,7 +98,7 @@ impl<'info> InitializeStablecoin<'info> {
             extension_types.push(ExtensionType::DefaultAccountState);
         }
 
-        // 3. Create the mint account with sufficient space
+        // 4. Create the mint account with sufficient space
         let mint_space = ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(
             &extension_types,
         )
@@ -112,7 +121,7 @@ impl<'info> InitializeStablecoin<'info> {
             ],
         )?;
 
-        // 4. Initialize extensions (BEFORE InitializeMint)
+        // 5. Initialize extensions (BEFORE InitializeMint)
 
         // MintCloseAuthority → stablecoin PDA can close the mint
         invoke(
@@ -161,7 +170,7 @@ impl<'info> InitializeStablecoin<'info> {
             )?;
         }
 
-        // 5. Initialize the mint
+        // 6. Initialize the mint
         // Both mint authority and freeze authority are the stablecoin PDA,
         // ensuring all operations go through our program's RBAC checks.
         invoke(

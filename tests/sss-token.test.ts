@@ -17,10 +17,12 @@ import {
   buildUnpauseIx,
   buildUpdateMinterIx,
   buildUpdateRolesIx,
+  buildUpdateSupplyCapIx,
   createTokenAccount,
   findMinterPDA,
   findRolePDA,
   findStablecoinPDA,
+  findSupplyCapPDA,
   getTokenAccountAddress,
   sendAndConfirmAndLog,
   SSS_HOOK_PROGRAM_ID,
@@ -741,6 +743,52 @@ describe("Simple Stablecoin Lifecycle", () => {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         expect(msg).to.match(/QuotaExceeded|Simulation failed|custom program error|0x/i);
+      }
+    });
+
+    it("rejects mint when supply_cap is wrong account (Audit 2: bypass fix)", async () => {
+      const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
+      const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
+      const [minterInfo] = findMinterPDA(stablecoinPDA, minterKeypair.publicKey);
+      const [supplyCapPDA] = findSupplyCapPDA(stablecoinPDA);
+      const recipientATA = getTokenAccountAddress(mintKeypair.publicKey, recipientKeypair.publicKey);
+
+      // Set supply cap
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(
+          buildUpdateSupplyCapIx(
+            authority.publicKey,
+            stablecoinPDA,
+            supplyCapPDA,
+            BigInt(1_000_000)
+          )
+        ),
+        [authority]
+      );
+
+      // Mint with wrong supply_cap (recipient ATA instead of PDA) — should fail with Unauthorized
+      try {
+        await sendAndConfirmTransaction(
+          connection,
+          new Transaction().add(
+            buildMintTokensIx(
+              minterKeypair.publicKey,
+              stablecoinPDA,
+              minterRole,
+              minterInfo,
+              mintKeypair.publicKey,
+              recipientATA,
+              BigInt(100),
+              recipientATA // wrong: pass recipient ATA as supply_cap to attempt bypass
+            )
+          ),
+          [minterKeypair]
+        );
+        expect.fail("Should reject mint with wrong supply_cap account");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        expect(msg).to.match(/Unauthorized|Simulation failed|custom program error|0x/i);
       }
     });
 

@@ -28,7 +28,8 @@
 | **Authority** | Update roles, transfer authority, update minter quota, update supply cap. |
 | **Minter** | Mint tokens within per-minter quota. Requires `MinterInfo` with quota. |
 | **Burner** | Burn tokens from own token account. |
-| **Pauser** | Pause/unpause stablecoin, freeze/thaw token accounts. |
+| **Pauser** | Pause/unpause stablecoin. |
+| **Freezer** | Freeze/thaw token accounts (pauser also has this capability for backward compatibility). |
 | **Blacklister** (SSS-2 only) | Add/remove addresses from blacklist. |
 | **Seizer** (SSS-2 only) | Seize full balance from a token account to a destination. |
 
@@ -64,4 +65,5 @@ Anchor constraint violations (e.g. `ConstraintRaw` 0x7d3 / 2003) can also occur 
 2. **Monitor mints and burns**: Alert on unusual mint/burn volumes or new minter additions.
 3. **Set supply caps**: Use `update_supply_cap` to limit total supply when desired.
 4. **Use SSS-2 for compliance**: Enable transfer hook and blacklist for regulated deployments.
-5. **Audit role grants**: Regularly review who has minter, burner, and pauser roles.
+5. **Audit role grants**: Regularly review who has minter, burner, pauser, and freezer roles.
+6. **Transfer authority**: The current authority can transfer authority to any address in a single step without the new authority signing. Document this design; consider two-step (propose + accept) for critical deployments.

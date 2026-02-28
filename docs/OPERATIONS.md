@@ -138,7 +138,7 @@ const supply = await stable.getTotalSupply();
 
 - **Update roles:** Use SDK `updateRoles(signer, { holder, roles })` (authority only). CLI: `minters add` / `minters remove` (see Management below).
 - **Update minter quota:** Use SDK `updateMinter(signer, { minter, quota })` (authority only). CLI: `minters add <ADDRESS> --quota <AMOUNT>`.
-- **Transfer authority:** Use SDK `transferAuthority(signer, newAuthority)` (authority only).
+- **Transfer authority:** Use SDK `transferAuthority(signer, newAuthority)` (authority only). Single-step: the new authority does not sign; ensure the target address is correct.
 
 ## Management (CLI)
 

@@ -1,9 +1,22 @@
+use anchor_lang::prelude::Pubkey;
+use anchor_lang::solana_program::pubkey;
+
+/// Official SSS-2 transfer hook program ID (sss_transfer_hook).
+/// When enable_transfer_hook is true during init, transfer_hook_program must match this.
+pub const SSS_TRANSFER_HOOK_PROGRAM_ID: Pubkey = pubkey!("8DMsf39fGWfcrWVjfyEq8fqZf5YcTvVPGgdJr8s2S8Nc");
+
 /// PDA seeds
 pub const STABLECOIN_SEED: &[u8] = b"stablecoin";
 pub const ROLE_SEED: &[u8] = b"role";
 pub const MINTER_SEED: &[u8] = b"minter";
 pub const BLACKLIST_SEED: &[u8] = b"blacklist";
 pub const SUPPLY_CAP_SEED: &[u8] = b"supply_cap";
+
+/// SupplyCap account layout (manual deserialization in mint.rs)
+pub const SUPPLY_CAP_DISCRIMINATOR_SIZE: usize = 8;
+pub const SUPPLY_CAP_VALUE_OFFSET: usize = SUPPLY_CAP_DISCRIMINATOR_SIZE;
+pub const SUPPLY_CAP_VALUE_SIZE: usize = 8;
+pub const MIN_SUPPLY_CAP_DATA_LEN: usize = SUPPLY_CAP_VALUE_OFFSET + SUPPLY_CAP_VALUE_SIZE;
 
 /// Validation limits
 pub const MAX_NAME_LEN: usize = 32;

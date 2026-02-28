@@ -43,7 +43,7 @@ const supply = await stable.getTotalSupply();
 
 ### Create and Load
 
-- `SolanaStablecoin.create(connection, params, signer)` — Create new stablecoin (mint + state + roles; SSS-2 also inits transfer hook PDA). Requires keypair for authority.
+- `SolanaStablecoin.create(connection, params, signer)` — Create new stablecoin (mint + state + roles; SSS-2 also inits transfer hook PDA). Requires keypair for authority. When `enableTransferHook` is true, the program enforces that the transfer hook program is the official SSS-2 hook (see `SSS_HOOK_PROGRAM_ID` in SDK constants).
 - `SolanaStablecoin.load(program, mint)` — Load by mint. Use `getProgram(provider)` to build `program`.
 
 ### State and View
