@@ -26,6 +26,7 @@ interface GlobalOpts {
   keypair?: string;
   rpcUrl?: string;
   mint?: string;
+  json?: boolean;
 }
 
 interface InitOpts {
@@ -95,7 +96,8 @@ program
   .description("Admin CLI for Solana Stablecoin Standard")
   .option("-k, --keypair <path>", "Path to keypair JSON")
   .option("-u, --rpc-url <url>", "RPC URL")
-  .option("-m, --mint <address>", "Stablecoin mint address (for non-init commands)");
+  .option("-m, --mint <address>", "Stablecoin mint address (for non-init commands)")
+  .option("--json", "Output JSON for read-only commands (status, supply, minters list, holders, audit-log)");
 
 function getGlobalOpts(): GlobalOpts {
   return program.opts() as GlobalOpts;
@@ -297,6 +299,24 @@ program
     const prog = loadProgram(connection, keypair);
     const stable = await SolanaStablecoin.load(prog as never, mint);
     const state = await stable.getState();
+    const supply = await stable.getTotalSupply();
+    if (globalOpts.json) {
+      console.log(
+        JSON.stringify({
+          mint: state.mint.toBase58(),
+          name: state.name,
+          symbol: state.symbol,
+          decimals: state.decimals,
+          paused: state.paused,
+          totalMinted: state.total_minted.toString(),
+          totalBurned: state.total_burned.toString(),
+          supply: supply.toString(),
+          authority: state.authority?.toBase58?.() ?? null,
+          preset: stable.isSSS2() ? "SSS-2" : "SSS-1",
+        })
+      );
+      return;
+    }
     console.log("Mint:", state.mint.toBase58());
     console.log("Name:", state.name);
     console.log("Symbol:", state.symbol);
@@ -323,6 +343,10 @@ program
     const prog = loadProgram(connection, keypair);
     const stable = await SolanaStablecoin.load(prog as never, mint);
     const supply = await stable.getTotalSupply();
+    if (globalOpts.json) {
+      console.log(JSON.stringify({ supply: supply.toString() }));
+      return;
+    }
     console.log(supply.toString());
   });
 
@@ -532,14 +556,26 @@ mintersCmd
         { memcmp: { offset: 8, bytes: stablecoinPDA.toBase58() } },
       ],
     });
-    console.log("Minter (address)                    | Quota        | Minted");
-    console.log("-                                   |--------------|--------------");
+    const list: { address: string; quota: string; minted: string }[] = [];
     for (const { account } of accounts) {
       const data = account.data;
       const minterPubkey = new PublicKey(data.subarray(8 + 32, 8 + 32 + 32));
       const quota = data.readBigUInt64LE(8 + 32 + 32);
       const minted = data.readBigUInt64LE(8 + 32 + 32 + 8);
-      console.log(`${minterPubkey.toBase58()} | ${quota.toString().padStart(12)} | ${minted.toString().padStart(12)}`);
+      list.push({
+        address: minterPubkey.toBase58(),
+        quota: quota.toString(),
+        minted: minted.toString(),
+      });
+    }
+    if (globalOpts.json) {
+      console.log(JSON.stringify(list));
+      return;
+    }
+    console.log("Minter (address)                    | Quota        | Minted");
+    console.log("-                                   |--------------|--------------");
+    for (const row of list) {
+      console.log(`${row.address} | ${row.quota.padStart(12)} | ${row.minted.padStart(12)}`);
     }
   });
 mintersCmd
@@ -669,6 +705,10 @@ program
       if (amount >= minBalance) entries.push({ owner: owner.toBase58(), amount: amount.toString() });
     }
     entries.sort((a, b) => (BigInt(b.amount) > BigInt(a.amount) ? 1 : -1));
+    if (globalOpts.json) {
+      console.log(JSON.stringify(entries));
+      return;
+    }
     if (entries.length === 0) {
       console.log("No holders meeting min-balance.");
       return;
@@ -702,6 +742,17 @@ program
       process.exit(1);
     }
     const text = await res.text();
+    if (globalOpts.json) {
+      let data: unknown;
+      try {
+        data = text ? JSON.parse(text) : { entries: [] };
+      } catch {
+        console.error("Backend did not return valid JSON");
+        process.exit(1);
+      }
+      console.log(JSON.stringify(data));
+      return;
+    }
     console.log(text);
   });
 

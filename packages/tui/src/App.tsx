@@ -95,9 +95,11 @@ export default function App() {
     }
   }, [mint, hasBackend]);
 
+const STATUS_POLL_INTERVAL_MS = 5000;
+
   useEffect(() => {
     if (!mint || loading) return;
-    const id = setInterval(refreshStatus, 8000);
+    const id = setInterval(refreshStatus, STATUS_POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [mint, loading, refreshStatus]);
 

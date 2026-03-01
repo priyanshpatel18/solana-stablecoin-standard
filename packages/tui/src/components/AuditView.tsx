@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Box, Text } from "ink";
-import { getAuditLog, type AuditEntry } from "../api.js";
+import { getAuditLog, AUDIT_LOG_LIMIT, type AuditEntry } from "../api.js";
 
 type Props = {
   mint?: string;
@@ -38,7 +38,7 @@ export default function AuditView({ mint, mode = "backend" }: Props) {
     }
     setLoading(true);
     setError(null);
-    getAuditLog(mint, 50)
+    getAuditLog(mint, AUDIT_LOG_LIMIT)
       .then((r) => setEntries(r.entries ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
@@ -77,7 +77,7 @@ export default function AuditView({ mint, mode = "backend" }: Props) {
       <Text bold color="cyan">
         Audit Log
       </Text>
-      <Text dimColor>Last {entries.length} entries</Text>
+      <Text dimColor>Last {entries.length} entries (limit {AUDIT_LOG_LIMIT})</Text>
       <Box flexDirection="column" marginTop={1}>
         <Box flexDirection="row" marginBottom={1}>
           <Box width={10}>

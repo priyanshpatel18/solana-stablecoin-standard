@@ -94,7 +94,13 @@ export interface AuditLogResponse {
   entries: AuditEntry[];
 }
 
-export async function getAuditLog(mint?: string, limit = 50): Promise<AuditLogResponse> {
+/** Default number of audit log entries to show. Override with env AUDIT_LOG_LIMIT. */
+export const AUDIT_LOG_LIMIT = (() => {
+  const n = parseInt(process.env.AUDIT_LOG_LIMIT ?? "50", 10);
+  return Number.isFinite(n) && n > 0 ? n : 50;
+})();
+
+export async function getAuditLog(mint?: string, limit = AUDIT_LOG_LIMIT): Promise<AuditLogResponse> {
   const params = new URLSearchParams({ format: "json" });
   if (mint) params.set("mint", mint);
   const data = await request<AuditLogResponse>(
