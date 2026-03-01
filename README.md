@@ -1,8 +1,23 @@
 # Solana Stablecoin Standard (SSS)
 
 [![CI](https://github.com/stellar/solana-stablecoin-standard/actions/workflows/ci.yml/badge.svg)]
-[![tests](https://img.shields.io/badge/tests-42%20SDK-green)](https://github.com/stellar/solana-stablecoin-standard)
+[![tests](https://img.shields.io/badge/tests-SDK%20%2B%20integration%20%2B%20backend%20%2B%20fuzz-green)](docs/TESTING.md)
 [![Devnet](https://img.shields.io/badge/devnet-deployed-9945FF)](docs/DEVNET.md)
+
+**License:** MIT · **Anchor:** 0.31.1 · **Solana Token-2022:** spl-token-2022 6.0.0
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Preset Comparison](#preset-comparison)
+- [Quick Start](#quick-start)
+- [Features](#features)
+- [Repository Layout](#repository-layout)
+- [Backend](#backend)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Verification (submission checklist)](#verification-submission-checklist)
+- [License](#license)
 
 Open-source standards and SDK for stablecoins on Solana — production-ready templates that institutions and builders can fork, customize, and deploy.
 
@@ -161,7 +176,7 @@ The backend provides a mint/burn API, event indexer, and compliance module (audi
 
 - [Testing](docs/TESTING.md) — Run all tests (SDK, backend, integration, fuzz); copy-paste commands
 - [Architecture](docs/ARCHITECTURE.md) — Layer model, data flows, security
-- [Security Audits](audits/) — SECURITY_AUDIT_1.md, SECURITY_AUDIT_2.md, SECURITY_AUDIT_3.md (all findings addressed)
+- [Security Audits](audits/) — SECURITY_AUDIT_1–6.md, FINAL_AUDIT.md (all findings addressed)
 - [SDK](docs/SDK.md) — Presets, custom config, TypeScript API
 - [Operations](docs/OPERATIONS.md) — Operator runbook
 - [SSS-1](docs/SSS-1.md) — Minimal stablecoin spec
@@ -170,6 +185,10 @@ The backend provides a mint/burn API, event indexer, and compliance module (audi
 - [API](docs/API.md) — Backend API reference
 - [Devnet](docs/DEVNET.md) — Deployment and example transactions
 - [Examples](examples/README.md) — Step-by-step TypeScript examples
+
+## Contributing
+
+Before contributing: ensure the build passes, tests pass, and documentation is updated. See [Verification (submission checklist)](#verification-submission-checklist) for commands.
 
 ## Verification (submission checklist)
 
