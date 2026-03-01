@@ -1,5 +1,11 @@
 import { expect } from "chai";
-import { ComplianceNotEnabledError, parseAnchorErrorCode, StablecoinErrorCode } from "../src/errors";
+import {
+  ComplianceNotEnabledError,
+  parseAnchorErrorCode,
+  parseProgramError,
+  getUserFacingMessage,
+  StablecoinErrorCode,
+} from "../src/errors";
 
 describe("Compliance gating and errors", () => {
   it("ComplianceNotEnabledError has correct message and name", () => {
@@ -60,5 +66,12 @@ describe("Compliance gating and errors", () => {
     expect(err).to.be.instanceOf(Error);
     expect(err).to.be.instanceOf(ComplianceNotEnabledError);
     expect(err.message).to.include("SSS-2");
+  });
+
+  it("parseProgramError maps blacklist codes to readable messages", () => {
+    expect(parseProgramError(["Error Code: 6003."])).to.include("already blacklisted");
+    expect(parseProgramError(["Error Code: 6004."])).to.include("not blacklisted");
+    expect(parseProgramError(["Error Code: 6011."])).to.include("blacklisted");
+    expect(getUserFacingMessage(6003)).to.include("already blacklisted");
   });
 });

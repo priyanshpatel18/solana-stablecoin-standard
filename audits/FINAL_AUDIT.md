@@ -36,3 +36,7 @@ The following components were analyzed:
 ## Conclusion
 
 The program exhibits strong defensive design with proper separation of concerns between minting, burning, compliance, and administrative operations.
+
+---
+
+*AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz*

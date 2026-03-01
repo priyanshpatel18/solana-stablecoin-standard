@@ -26,6 +26,8 @@ This directory holds [Trident](https://ackee.xyz/trident/docs/latest/) fuzz test
    trident fuzz run fuzz_0
    ```
 
+   Run supply cap fuzz target: `trident fuzz run fuzz_1`.
+
    Optional: fixed seed for reproducibility — `trident fuzz run fuzz_0 12345`. Enable logging: `TRIDENT_LOG=1 trident fuzz run fuzz_0`.
 
 ## Troubleshooting

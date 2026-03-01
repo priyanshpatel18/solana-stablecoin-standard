@@ -1,10 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
+import { createTransferCheckedWithTransferHookInstruction } from "@solana/spl-token";
 import {
-  Connection,
   Keypair,
   sendAndConfirmTransaction,
   SystemProgram,
-  Transaction,
+  Transaction
 } from "@solana/web3.js";
 import { expect } from "chai";
 import {
@@ -29,7 +29,6 @@ import {
   SSS_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
 } from "./helpers";
-import { createTransferCheckedWithTransferHookInstruction } from "@solana/spl-token";
 
 describe("Stablecoin with Transfer Hook", () => {
   const provider = anchor.AnchorProvider.env();
@@ -37,7 +36,6 @@ describe("Stablecoin with Transfer Hook", () => {
   const connection = provider.connection;
   const payer = provider.wallet.payer as Keypair;
 
-  // Test state
   let authority: Keypair;
   let mintKeypair: Keypair;
   let minterKeypair: Keypair;
@@ -225,7 +223,6 @@ describe("Stablecoin with Transfer Hook", () => {
       const [stablecoinPDA] = findStablecoinPDA(mintKeypair.publicKey);
       const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
 
-      // User ATA is frozen by default (defaultAccountFrozen=true)
       const userATA = await createTokenAccount(
         connection,
         authority,
@@ -614,7 +611,6 @@ describe("Stablecoin with Transfer Hook", () => {
       const [authorityRole] = findRolePDA(stablecoinPDA, authority.publicKey);
       const [szRole] = findRolePDA(stablecoinPDA, seizerKeypair.publicKey);
 
-      // badActor ATA already exists and is thawed from "blacklist destination" test
       const badActorATA = getTokenAccountAddress(mintKeypair.publicKey, badActorKeypair.publicKey);
 
       const [minterRole] = findRolePDA(stablecoinPDA, minterKeypair.publicKey);
@@ -646,8 +642,6 @@ describe("Stablecoin with Transfer Hook", () => {
       );
       await sendAndConfirmAndLog(connection, new Transaction().add(thawTreasuryIx), [authority], "Thaw treasury");
 
-      // Hook Execute "authority" (index 3) = transfer signer = permanent delegate = stablecoin PDA.
-      // So source_blacklist must be blacklist(stablecoin, stablecoin), not blacklist(stablecoin, bad_actor).
       const [extraAccountMetas] = findExtraAccountMetasPDA(
         mintKeypair.publicKey,
         SSS_HOOK_PROGRAM_ID
@@ -807,7 +801,6 @@ describe("Stablecoin with Transfer Hook", () => {
       const [sourceBlacklist] = findBlacklistPDA(stablecoinPDA, stablecoinPDA);
       const [destBlacklist] = findBlacklistPDA(stablecoinPDA, authority.publicKey);
 
-      // Use existing ATAs from Seize test (avoid ATA create which can fail with "Provided owner is not allowed")
       const badActorATA = getTokenAccountAddress(mintKeypair.publicKey, badActorKeypair.publicKey);
       const treasuryATA = getTokenAccountAddress(mintKeypair.publicKey, authority.publicKey);
 

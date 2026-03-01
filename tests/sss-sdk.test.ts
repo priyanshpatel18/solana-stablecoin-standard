@@ -1,7 +1,3 @@
-/**
- * Integration tests that use the TypeScript SDK (SolanaStablecoin.load, getState, mint, etc.).
- * These run after the program is deployed (anchor test) and rely on the same provider/setup as sss-token.test.ts.
- */
 import * as anchor from "@coral-xyz/anchor";
 import {
   Keypair,
@@ -9,22 +5,21 @@ import {
   Transaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { expect } from "chai";
 import {
   SolanaStablecoin,
-  Presets,
-  findStablecoinPDA,
-  findRolePDA,
   findMinterPDA,
+  findRolePDA,
+  findStablecoinPDA
 } from "@stbr/sss-token";
+import { expect } from "chai";
+import idl from "../sdk/core/src/idl/solana_stablecoin_standard.json";
 import {
   SSS_HOOK_PROGRAM_ID,
   buildInitializeIx,
-  buildUpdateRolesIx,
   buildUpdateMinterIx,
+  buildUpdateRolesIx,
   createTokenAccount,
 } from "./helpers";
-import idl from "../sdk/core/src/idl/solana_stablecoin_standard.json";
 
 describe("SDK integration (SSS-1 flow)", () => {
   const provider = anchor.AnchorProvider.env();

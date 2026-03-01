@@ -1,7 +1,6 @@
 use trident_fuzz::fuzzing::*;
 
 #[derive(Default)]
-#[allow(dead_code)]
 pub struct AccountAddresses {
     pub blacklister: AddressStorage,
 
@@ -31,13 +30,13 @@ pub struct AccountAddresses {
 
     pub transfer_hook_program: AddressStorage,
 
-    pub rent: AddressStorage,
-
     pub minter: AddressStorage,
 
     pub minter_info: AddressStorage,
 
     pub recipient_token_account: AddressStorage,
+
+    pub supply_cap: AddressStorage,
 
     pub seizer: AddressStorage,
 

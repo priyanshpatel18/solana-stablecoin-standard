@@ -1,0 +1,250 @@
+{
+  "custom_metrics": {},
+  "master_seed": "9e8090d312f7fe1f2e7252a645b2a7569d1aa1c567142c6acb4a6c7e95053378",
+  "state_snapshots_hash": "",
+  "transactions": {
+    "AddToBlacklistNonBlacklister": {
+      "custom_instruction_errors": {
+        "errors": {
+          "1": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: AddToBlacklist",
+              "Program 11111111111111111111111111111111 invoke [2]",
+              "Transfer: insufficient lamports 0, need 2401200",
+              "Program 11111111111111111111111111111111 failed: custom program error: 0x1",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 17571 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x1"
+            ],
+            "occurrences": 16734
+          }
+        }
+      },
+      "transaction_failed": 16734,
+      "transaction_invoked": 16734,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "CreateATA": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 16503,
+      "transaction_panicked": 0,
+      "transaction_successful": 16503,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "InitializeStablecoin": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 100000,
+      "transaction_panicked": 0,
+      "transaction_successful": 100000,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "MintAfterPause": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 16767,
+      "transaction_invoked": 16767,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {
+          "invalid account data for instruction": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: MintTokens",
+              "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb invoke [2]",
+              "Program log: Instruction: MintTo",
+              "Program log: Error: InvalidAccountData",
+              "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb consumed 882 of 1385709 compute units",
+              "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb failed: invalid account data for instruction",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 15173 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: invalid account data for instruction"
+            ],
+            "occurrences": 16767
+          }
+        }
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "MintOne": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 16503,
+      "transaction_panicked": 0,
+      "transaction_successful": 16503,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "MintOverflow": {
+      "custom_instruction_errors": {
+        "errors": {
+          "6012": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: MintTokens",
+              "Program log: AnchorError occurred. Error Code: MathOverflow. Error Number: 6012. Error Message: Arithmetic overflow.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 12317 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x177c"
+            ],
+            "occurrences": 16503
+          }
+        }
+      },
+      "transaction_failed": 16503,
+      "transaction_invoked": 16503,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Pause": {
+      "custom_instruction_errors": {
+        "errors": {
+          "6000": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: Pause",
+              "Program log: AnchorError thrown in programs/sss-1/src/instructions/pause.rs:28. Error Code: Unauthorized. Error Number: 6000. Error Message: Unauthorized: caller lacks required role.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 7806 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x1770"
+            ],
+            "occurrences": 16767
+          }
+        }
+      },
+      "transaction_failed": 16767,
+      "transaction_invoked": 50204,
+      "transaction_panicked": 0,
+      "transaction_successful": 33437,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Unpause": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 16734,
+      "transaction_panicked": 0,
+      "transaction_successful": 16734,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateMinter": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 33270,
+      "transaction_panicked": 0,
+      "transaction_successful": 33270,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateRoles": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 33270,
+      "transaction_panicked": 0,
+      "transaction_successful": 33270,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateRolesAttacker": {
+      "custom_instruction_errors": {
+        "errors": {
+          "1": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: UpdateRoles",
+              "Program 11111111111111111111111111111111 invoke [2]",
+              "Transfer: insufficient lamports 0, need 1440720",
+              "Program 11111111111111111111111111111111 failed: custom program error: 0x1",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 10546 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x1"
+            ],
+            "occurrences": 16559
+          }
+        }
+      },
+      "transaction_failed": 16559,
+      "transaction_invoked": 16559,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateRolesMinter": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 16734,
+      "transaction_panicked": 0,
+      "transaction_successful": 16734,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    }
+  }
+}

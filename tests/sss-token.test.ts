@@ -36,7 +36,6 @@ describe("Simple Stablecoin Lifecycle", () => {
   const connection = provider.connection;
   const authority = provider.wallet.payer as Keypair;
 
-  // Test state
   let mintKeypair: Keypair;
   let minterKeypair: Keypair;
   let burnerKeypair: Keypair;
@@ -52,7 +51,6 @@ describe("Simple Stablecoin Lifecycle", () => {
     newAuthority = Keypair.generate();
     quotaTestMinter = Keypair.generate();
 
-    // Fund keypairs via SOL transfer from provider (economic: 0.1 SOL each)
     const LAMPORTS_PER_KEYPAIR = 100_000_000;
     const tx = new Transaction();
     for (const kp of [minterKeypair, burnerKeypair, recipientKeypair, newAuthority, quotaTestMinter]) {
@@ -407,7 +405,6 @@ describe("Simple Stablecoin Lifecycle", () => {
       const [nonMinterRole] = findRolePDA(stablecoinPDA, newAuthority.publicKey);
       const [nonMinterInfo] = findMinterPDA(stablecoinPDA, newAuthority.publicKey);
 
-      // Assign newAuthority a role without minter permission
       await sendAndConfirmTransaction(
         connection,
         new Transaction().add(
@@ -429,7 +426,6 @@ describe("Simple Stablecoin Lifecycle", () => {
         [authority]
       );
 
-      // Use existing recipient ATA from Mint test (avoid ATA create which can fail with "Provided owner is not allowed")
       const recipientATA = getTokenAccountAddress(mintKeypair.publicKey, recipientKeypair.publicKey);
 
       try {
@@ -689,7 +685,6 @@ describe("Simple Stablecoin Lifecycle", () => {
       const [quotaTestMinterInfo] = findMinterPDA(stablecoinPDA, quotaTestMinter.publicKey);
       const recipientATA = getTokenAccountAddress(mintKeypair.publicKey, recipientKeypair.publicKey);
 
-      // Use a fresh minter (quotaTestMinter) with no prior mints so we can set quota to 100
       await sendAndConfirmTransaction(
         connection,
         new Transaction().add(
@@ -753,7 +748,6 @@ describe("Simple Stablecoin Lifecycle", () => {
       const [supplyCapPDA] = findSupplyCapPDA(stablecoinPDA);
       const recipientATA = getTokenAccountAddress(mintKeypair.publicKey, recipientKeypair.publicKey);
 
-      // Set supply cap
       await sendAndConfirmTransaction(
         connection,
         new Transaction().add(
@@ -767,7 +761,6 @@ describe("Simple Stablecoin Lifecycle", () => {
         [authority]
       );
 
-      // Mint with wrong supply_cap (recipient ATA instead of PDA) — should fail with Unauthorized
       try {
         await sendAndConfirmTransaction(
           connection,
@@ -1212,7 +1205,7 @@ describe("Simple Stablecoin Lifecycle", () => {
           )
         ),
         [authority]
-      ).catch(() => {});
+      ).catch(() => { });
       const [burnerOnlyRole] = findRolePDA(stablecoinPDA, recipientKeypair.publicKey);
       const [minterInfo] = findMinterPDA(stablecoinPDA, recipientKeypair.publicKey);
       await sendAndConfirmTransaction(
@@ -1298,7 +1291,7 @@ describe("Simple Stablecoin Lifecycle", () => {
           )
         ),
         [authority]
-      ).catch(() => {});
+      ).catch(() => { });
       const [minterOnlyRole] = findRolePDA(stablecoinPDA, recipientKeypair.publicKey);
       const [minterInfo] = findMinterPDA(stablecoinPDA, recipientKeypair.publicKey);
       await sendAndConfirmTransaction(

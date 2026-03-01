@@ -1,14 +1,14 @@
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import {
   Connection,
   Keypair,
   PublicKey,
   sendAndConfirmTransaction,
-  Transaction,
-  TransactionInstruction,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import * as crypto from "crypto";
 import idlSssToken from "../sdk/core/src/idl/solana_stablecoin_standard.json";
 import idlSssHook from "../sdk/core/src/idl/sss_transfer_hook.json";
@@ -20,12 +20,9 @@ export const SSS_HOOK_PROGRAM_ID = new PublicKey(
   (idlSssHook as { address: string }).address
 );
 
-/** Token-2022 program (mint, transfers, freeze). */
 export const TOKEN_2022_PROGRAM_ID = new PublicKey(
   "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 );
-
-// PDA derivation (seeds match program).
 
 export function findStablecoinPDA(mint: PublicKey): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
@@ -71,7 +68,6 @@ export function findSupplyCapPDA(stablecoin: PublicKey): [PublicKey, number] {
   );
 }
 
-/** ExtraAccountMetaList PDA for transfer hook (seeds: ["extra-account-metas", mint], program: hookProgramId). */
 export function findExtraAccountMetasPDA(
   mint: PublicKey,
   hookProgramId: PublicKey
@@ -82,14 +78,10 @@ export function findExtraAccountMetasPDA(
   );
 }
 
-// ── Anchor instruction discriminator (first 8 bytes of sha256("global:<name>")) ─
-
 export function anchorDiscriminator(name: string): Buffer {
   const hash = crypto.createHash("sha256").update(`global:${name}`).digest();
   return hash.subarray(0, 8);
 }
-
-// ── Instruction builders (account order must match program structs) ───────────
 
 export interface InitializeParams {
   name: string;
@@ -391,9 +383,6 @@ export function buildTransferAuthorityIx(
   });
 }
 
-// ── Token-2022 ATA ─────────────────────────────────────────────────────────
-
-/** Derive Token-2022 ATA address for (mint, owner). Use when account already exists. */
 export function getTokenAccountAddress(mint: PublicKey, owner: PublicKey): PublicKey {
   return getAssociatedTokenAddressSync(
     mint,
@@ -429,7 +418,6 @@ export async function createTokenAccount(
   await sendAndConfirmTransaction(connection, new Transaction().add(ix), [payer]);
   return ata;
 }
-
 
 export function buildAddToBlacklistIx(
   blacklister: PublicKey,
@@ -480,7 +468,6 @@ export function buildRemoveFromBlacklistIx(
   });
 }
 
-/** Build hook's initialize_extra_account_meta_list instruction (SSS-2 with transfer hook). */
 export function buildInitializeExtraAccountMetaListIx(
   authority: PublicKey,
   extraAccountMetaList: PublicKey,
@@ -536,11 +523,8 @@ export function buildSeizeIx(
   });
 }
 
-// ── Devnet / Explorer logging ──────────────────────────────────────────────
-
 export type ExplorerCluster = "devnet" | "mainnet-beta" | "localnet";
 
-/** Infer cluster from RPC endpoint for Explorer links. */
 export function clusterFromRpcEndpoint(rpcUrl: string): ExplorerCluster | null {
   const u = rpcUrl.toLowerCase();
   if (u.includes("devnet")) return "devnet";
@@ -548,13 +532,11 @@ export function clusterFromRpcEndpoint(rpcUrl: string): ExplorerCluster | null {
   return null;
 }
 
-/** Explorer transaction URL (empty for localnet). */
 export function getExplorerTxUrl(signature: string, cluster: ExplorerCluster | null): string {
   if (!cluster || cluster === "localnet") return "";
   return `https://explorer.solana.com/tx/${signature}?cluster=${cluster}`;
 }
 
-/** Log transaction signature and Explorer link when cluster is devnet/mainnet. */
 export function logTx(
   signature: string,
   label: string,
@@ -566,7 +548,6 @@ export function logTx(
   if (url) console.log("  Explorer:", url);
 }
 
-/** Send transaction, confirm, and log signature + Explorer link (for devnet). */
 export async function sendAndConfirmAndLog(
   connection: Connection,
   tx: Transaction,
