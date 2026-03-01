@@ -77,10 +77,10 @@ jobs:
         run: printf '%s\n' 'packages:' '  - "sdk/core"' '  - "packages/cli"' '  - "packages/tui"' '  - "backend"' > pnpm-workspace.yaml
       - name: Install dependencies
         run: pnpm install
-      - name: Build SDK
-        run: pnpm run build:sdk
-      - name: Run backend tests
-        run: pnpm -C backend test
+      - name: Build SDK and run backend tests
+        run: |
+          pnpm run build:sdk
+          pnpm -C backend test
 
   cargo:
     name: Cargo
