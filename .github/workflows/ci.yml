@@ -2,15 +2,22 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
 
 jobs:
+  lint:
+    name: Lint workflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        run: |
+          bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest .
+          ./actionlint -shellcheck= -pyflakes= .github/workflows/ci.yml
+        shell: bash
+
   integration:
     name: Integration
     runs-on: ubuntu-latest
@@ -27,12 +34,7 @@ jobs:
         with:
           node-version: "20"
       - name: Create pnpm workspace
-        run: |
-          echo 'packages:
-  - "sdk/core"
-  - "packages/cli"
-  - "packages/tui"
-  - "backend"' > pnpm-workspace.yaml
+        run: printf '%s\n' 'packages:' '  - "sdk/core"' '  - "packages/cli"' '  - "packages/tui"' '  - "backend"' > pnpm-workspace.yaml
       - name: Install dependencies
         run: pnpm install
       - name: Build programs
@@ -52,12 +54,7 @@ jobs:
         with:
           node-version: "20"
       - name: Create pnpm workspace
-        run: |
-          echo 'packages:
-  - "sdk/core"
-  - "packages/cli"
-  - "packages/tui"
-  - "backend"' > pnpm-workspace.yaml
+        run: printf '%s\n' 'packages:' '  - "sdk/core"' '  - "packages/cli"' '  - "packages/tui"' '  - "backend"' > pnpm-workspace.yaml
       - name: Install dependencies
         run: pnpm install
       - name: Build SDK
@@ -77,12 +74,7 @@ jobs:
         with:
           node-version: "20"
       - name: Create pnpm workspace
-        run: |
-          echo 'packages:
-  - "sdk/core"
-  - "packages/cli"
-  - "packages/tui"
-  - "backend"' > pnpm-workspace.yaml
+        run: printf '%s\n' 'packages:' '  - "sdk/core"' '  - "packages/cli"' '  - "packages/tui"' '  - "backend"' > pnpm-workspace.yaml
       - name: Install dependencies
         run: pnpm install
       - name: Run backend tests
@@ -113,12 +105,7 @@ jobs:
         with:
           node-version: "20"
       - name: Create pnpm workspace
-        run: |
-          echo 'packages:
-  - "sdk/core"
-  - "packages/cli"
-  - "packages/tui"
-  - "backend"' > pnpm-workspace.yaml
+        run: printf '%s\n' 'packages:' '  - "sdk/core"' '  - "packages/cli"' '  - "packages/tui"' '  - "backend"' > pnpm-workspace.yaml
       - name: Install dependencies
         run: pnpm install
       - name: Build programs
