@@ -1,0 +1,151 @@
+{
+  "custom_metrics": {},
+  "master_seed": "0c1f4bcbedeca22dfafec1d0468e80ff871512aba17b626894a6b186a0aabe1e",
+  "state_snapshots_hash": "",
+  "transactions": {
+    "CreateATA": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 12556,
+      "transaction_panicked": 0,
+      "transaction_successful": 12556,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "InitializeStablecoin": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 25000,
+      "transaction_panicked": 0,
+      "transaction_successful": 25000,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "Mint50": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 12556,
+      "transaction_panicked": 0,
+      "transaction_successful": 12556,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "MintOverCap": {
+      "custom_instruction_errors": {
+        "errors": {
+          "6014": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: MintTokens",
+              "Program log: AnchorError occurred. Error Code: SupplyCapExceeded. Error Number: 6014. Error Message: Supply cap exceeded.",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 16892 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x177e"
+            ],
+            "occurrences": 12556
+          }
+        }
+      },
+      "transaction_failed": 12556,
+      "transaction_invoked": 12556,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateMinter": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 12556,
+      "transaction_panicked": 0,
+      "transaction_successful": 12556,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateRoles": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 12556,
+      "transaction_panicked": 0,
+      "transaction_successful": 12556,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateSupplyCap": {
+      "custom_instruction_errors": {
+        "errors": {}
+      },
+      "transaction_failed": 0,
+      "transaction_invoked": 12556,
+      "transaction_panicked": 0,
+      "transaction_successful": 12556,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    },
+    "UpdateSupplyCapAttacker": {
+      "custom_instruction_errors": {
+        "errors": {
+          "1": {
+            "logs": [
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ invoke [1]",
+              "Program log: Instruction: UpdateSupplyCap",
+              "Program 11111111111111111111111111111111 invoke [2]",
+              "Transfer: insufficient lamports 0, need 1009200",
+              "Program 11111111111111111111111111111111 failed: custom program error: 0x1",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ consumed 7319 of 1400000 compute units",
+              "Program 47TNsKC1iJvLTKYRMbfYjrod4a56YE1f4qv73hZkdWUZ failed: custom program error: 0x1"
+            ],
+            "occurrences": 12444
+          }
+        }
+      },
+      "transaction_failed": 12444,
+      "transaction_invoked": 12444,
+      "transaction_panicked": 0,
+      "transaction_successful": 0,
+      "transactions_errors": {
+        "errors": {}
+      },
+      "transactions_panics": {
+        "panics": {}
+      }
+    }
+  }
+}

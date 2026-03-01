@@ -22,7 +22,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Build programs
@@ -41,7 +40,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Run SDK tests
@@ -58,7 +56,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Run backend tests
@@ -79,7 +76,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Build programs

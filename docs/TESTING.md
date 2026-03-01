@@ -1,23 +1,58 @@
 # Testing
 
+## Run All Tests (copy-paste)
+
+From repo root after `pnpm install`:
+
+```bash
+# 1. SDK unit tests (no validator)
+pnpm test:sdk
+
+# 2. Backend tests (no validator)
+pnpm -C backend test
+
+# 3. Integration tests (starts validator, deploys, runs ~38 tests)
+anchor build && pnpm test:integration
+
+# 4. Trident fuzz tests (requires: cargo install trident-cli)
+cd trident-tests && trident fuzz run fuzz_0 && trident fuzz run fuzz_1
+```
+
+**Full suite** (SDK + backend + integration + fuzz):
+
+```bash
+pnpm install
+pnpm test:sdk
+pnpm -C backend test
+anchor build && pnpm test:integration
+cd trident-tests && trident fuzz run fuzz_0 && trident fuzz run fuzz_1
+```
+
 ## Test Layers
 
-- **SDK unit tests** — `sdk/core`: PDA derivation, presets, config normalization, error parsing, compliance gating. No chain. Run: `npm run test:sdk` (from repo root) or `cd sdk/core && npm test`.
-- **Integration tests** — Repo root `tests/`: Full lifecycle with local validator. Run: `anchor test`. Includes `sss-token.test.ts`, `sss-transfer-hook.test.ts`, and `sss-sdk.test.ts` (SDK load/mint/supply).
-- **CLI smoke test** — Builds `packages/cli` and runs `--help` (and subcommand help). Run: `npm run test:cli` (from repo root). **Install dependencies first:** from repo root run `pnpm install` or `npm install` so workspace packages (including `sdk/core` and `packages/cli`) have their deps. With **pnpm**, a `pnpm-workspace.yaml` is included so workspaces are supported. You may see a one-time `bigint: Failed to load bindings, pure JS will be used` message from a dependency; it is harmless and the CLI runs correctly.
+- **SDK unit tests** — `sdk/core`: PDA derivation, presets, config normalization, error parsing, compliance gating. No chain. Run: `pnpm test:sdk`.
+- **Backend tests** — `backend/__tests__`: API, compliance, validation. Run: `pnpm -C backend test`.
+- **Integration tests** — Repo root `tests/`: Full lifecycle with local validator. Run: `anchor build && pnpm test:integration`. Includes `sss1-lifecycle.test.ts`, `sss2-compliance.test.ts`, `roles-and-minters.test.ts`, `edge-cases.test.ts`, `authority-transfer.test.ts`, and `sss-sdk.test.ts`.
+- **CLI smoke test** — Builds `packages/cli` and runs `--help`. Run: `pnpm test:cli`.
 - **Fuzz tests (Trident)** — Instruction sequences and invariants for the sss-1 program. See [Fuzz tests](#fuzz-tests) below.
 
 ## Running Tests
 
 ```bash
 # SDK unit tests only (no validator)
-npm run test:sdk
+pnpm test:sdk
+
+# Backend tests only (no validator)
+pnpm -C backend test
 
 # Integration tests (starts validator, deploys programs, runs all test files)
-anchor test
+anchor build && pnpm test:integration
 
 # CLI smoke test (build + --help; no RPC)
-npm run test:cli
+pnpm test:cli
+
+# Trident fuzz (from trident-tests/)
+cd trident-tests && trident fuzz run fuzz_0 && trident fuzz run fuzz_1
 ```
 
 ## Fuzz tests
@@ -93,9 +128,14 @@ The fuzz harness asserts that certain transactions fail as expected:
 
 Integration and SDK unit tests total 100+ across the repo.
 
-- **sss-token.test.ts** — SSS-1: initialize, roles, mint, burn, pause, freeze/thaw, transfer authority, error cases, pause bypass, quota/supply, lifecycle, freeze/thaw edge cases, authority transfer, roles isolation.
+- **sss1-lifecycle.test.ts** — SSS-1 full lifecycle.
+- **sss2-compliance.test.ts** — SSS-2 compliance (transfer hook, blacklist, seize).
+- **sss-token.test.ts** — SSS-1: initialize, roles, mint, burn, pause, freeze/thaw, transfer authority, error cases, quota/supply, authority transfer, roles isolation.
 - **sss-transfer-hook.test.ts** — SSS-2: initialize with hook, roles, minter quota, extra-account-metas, blacklist, seize, error cases.
-- **sss-sdk.test.ts** — SDK: create stablecoin with helpers, load with `SolanaStablecoin.load`, getState, getTotalSupply, mint via SDK.
+- **roles-and-minters.test.ts** — Roles and minter quotas.
+- **edge-cases.test.ts** — Edge cases.
+- **authority-transfer.test.ts** — Authority transfer.
+- **sss-sdk.test.ts** — SDK: create stablecoin, load with `SolanaStablecoin.load`, getState, getTotalSupply, mint via SDK.
 
 ## Preset / Config Tests
 
