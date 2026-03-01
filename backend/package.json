@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "test": "mocha -r ts-node/register __tests__/**/*.ts"
+    "test": "pnpm exec mocha -r ts-node/register __tests__/**/*.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

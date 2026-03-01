@@ -1,5 +1,6 @@
 # Solana Stablecoin Standard (SSS)
 
+[![CI](https://github.com/stellar/solana-stablecoin-standard/actions/workflows/ci.yml/badge.svg)]
 [![tests](https://img.shields.io/badge/tests-42%20SDK-green)](https://github.com/stellar/solana-stablecoin-standard)
 [![Devnet](https://img.shields.io/badge/devnet-deployed-9945FF)](docs/DEVNET.md)
 
